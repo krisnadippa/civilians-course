@@ -1,26 +1,285 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* ── Solid Blue Design System ── */
+  --primary: #1A56DB;       /* Royal Blue – main brand */
+  --primary-dark: #1345B5;  /* Hover / active state */
+  --primary-light: #3B82F6; /* Accent blue */
+  --blue-50: #EFF6FF;       /* Very light blue tint */
+  --blue-100: #DBEAFE;      /* Light blue tint */
+
+  --accent: #0F172A;        /* Near-black */
+  --bg: #FFFFFF;
+  --bg-subtle: #F8FAFC;
+  --bg-blue: #F0F4FF;       /* Light blue section bg */
+
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-light: #94A3B8;
+
+  --border: #E2E8F0;
+  --border-blue: #BFDBFE;   /* Blue-tinted border */
+
+  --slate: #64748B;
+  --slate-dark: #0F172A;
+
+  /* Semantic */
+  --green: #16A34A;
+  --danger: #DC2626;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.08);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 8px 24px rgba(15, 23, 42, 0.10);
+  --shadow-blue: 0 4px 20px rgba(26, 86, 219, 0.20);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, sans-serif;
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.6;
+}
+
+h1, h2, h3, h4, .font-heading {
+  font-family: 'Space Grotesk', sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* ── Layout ── */
+.container-main {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* ── Backgrounds ── */
+.blueprint-bg {
+  background-color: var(--bg-subtle);
+  background-image: radial-gradient(var(--border) 1.5px, transparent 1.5px);
+  background-size: 28px 28px;
+}
+
+.blue-dot-bg {
+  background-color: var(--bg-blue);
+  background-image: radial-gradient(var(--border-blue) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* ── Glass nav ── */
+.glass {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── Cards ── */
+.card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-blue);
+  border-color: var(--border-blue);
+}
+
+.card-blue {
+  background: var(--blue-50);
+  border: 1px solid var(--border-blue);
+  border-radius: 12px;
+}
+
+/* ── Buttons ── */
+.btn-primary {
+  background: var(--primary);
+  color: white;
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.2s ease, transform 0.15s ease;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.btn-primary:hover {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  background: white;
+  color: var(--text-primary);
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  border: 1px solid var(--border);
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background: var(--bg-subtle);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.btn-outline-blue {
+  background: transparent;
+  color: white;
+  font-weight: 600;
+  padding: 11px 22px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  border: 1.5px solid rgba(255,255,255,0.5);
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.btn-outline-blue:hover {
+  background: rgba(255,255,255,0.12);
+  border-color: white;
+}
+
+.btn-booking {
+  background: var(--primary);
+  color: white;
+  font-weight: 600;
+  padding: 11px 22px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.2s ease;
+  border: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.btn-booking:hover { background: var(--primary-dark); }
+.btn-booking:disabled { background: var(--slate); cursor: not-allowed; }
+
+/* ── Tags ── */
+.tag-primary {
+  background: var(--blue-100);
+  color: var(--primary);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: inline-block;
+}
+
+.tag-slate {
+  background: var(--bg-subtle);
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  display: inline-block;
+}
+
+/* ── Section Labels ── */
+.section-label {
+  color: var(--primary);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  display: block;
+  margin-bottom: 0.75rem;
+}
+
+.section-title {
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+/* ── Forms ── */
+input, select, textarea {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 11px 16px;
+  background: white;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--primary);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(26, 86, 219, 0.1);
+}
+
+/* ── Dividers ── */
+.divider-blue {
+  width: 40px;
+  height: 3px;
+  background: var(--primary);
+  border-radius: 2px;
+  margin-bottom: 1rem;
+}
+
+/* ── Animated underline ── */
+.animate-underline {
+  position: relative;
+}
+.animate-underline::after {
+  content: '';
+  position: absolute;
+  left: 0; bottom: -2px;
+  width: 0; height: 2px;
+  background: var(--primary);
+  transition: width 0.3s ease;
+}
+.animate-underline:hover::after { width: 100%; }
+
+/* ── Icon boxes ── */
+.icon-box {
+  width: 48px; height: 48px;
+  border-radius: 10px;
+  background: var(--blue-50);
+  border: 1px solid var(--border-blue);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.icon-box-solid {
+  width: 48px; height: 48px;
+  border-radius: 10px;
+  background: var(--primary);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
 }
