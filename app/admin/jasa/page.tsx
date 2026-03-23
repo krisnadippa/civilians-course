@@ -119,22 +119,21 @@ export default function AdminJasaPage() {
                       </span>
                     </td>
                     <td className="px-5 py-4 text-slate-400 font-medium">{item.date}</td>
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-2">
+                    <td className="px-5 py-4 text-right">
+                      <div className="flex items-center gap-2 justify-end">
                         {item.status === "Menunggu" && (
                           <button 
                             onClick={() => updateStatus(item.id, "Diproses")}
-                            className="p-2 rounded-lg bg-green-50 text-green-600 hover:bg-green-100 transition-colors"
-                            title="Terima Inkuiri"
+                            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 transition-colors font-bold text-[10px] uppercase"
                           >
-                            <CheckCircle2 size={14} />
+                            <CheckCircle2 size={12} /> Terima
                           </button>
                         )}
-                        <button className="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" title="Hubungi Klien">
-                          <MessageSquare size={14} />
+                        <button className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors font-bold text-[10px] uppercase">
+                          <MessageSquare size={12} /> Hubungi
                         </button>
-                        <button className="p-2 rounded-lg bg-slate-50 text-slate-500 hover:bg-slate-100 transition-colors" title="Lihat Detail">
-                          <Eye size={14} />
+                        <button className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-50 text-slate-600 hover:bg-slate-100 transition-colors font-bold text-[10px] uppercase">
+                          <Eye size={12} /> Detail
                         </button>
                       </div>
                     </td>

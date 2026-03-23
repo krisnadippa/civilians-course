@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, XCircle, Download, Eye, Package } from "lucide-react";
+import { CheckCircle2, XCircle, Download, Eye, Package, Plus } from "lucide-react";
 import AnimatedSection from "../../_components/AnimatedSection";
 
 const orders = [
@@ -21,8 +21,16 @@ const statusColors: Record<string, string> = {
 };
 
 export default function AdminTokoPage() {
+  const [view, setView] = useState("orders"); // "orders" or "products"
   const [data, setData] = useState(orders);
   const [statusFilter, setStatusFilter] = useState("Semua");
+
+  const products = [
+    { id: 1, name: "Template RAB Perumahan", category: "RAB", price: 145000, stock: 99, status: "Tersedia" },
+    { id: 2, name: "Set Gambar CAD Ruko", category: "Gambar CAD", price: 195000, stock: 45, status: "Tersedia" },
+    { id: 3, name: "Jasa Pembuatan PPT Sidang", category: "Jasa", price: 75000, stock: 0, status: "Pre-order" },
+    { id: 4, name: "Model Civil 3D Jalan Raya", category: "Civil 3D", price: 225000, stock: 12, status: "Tersedia" },
+  ];
 
   const filtered = data.filter((o) => statusFilter === "Semua" || o.status === statusFilter);
   const totalRevenue = data.filter(o => o.status === "Selesai").reduce((s, o) => s + o.amount, 0);
@@ -31,91 +39,146 @@ export default function AdminTokoPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#1C2433" }}>Manajemen Toko & Pesanan</h1>
-        <p className="text-sm" style={{ color: "var(--text-light)" }}>{orders.length} total pesanan · Rp {totalRevenue.toLocaleString("id")} pendapatan terkonfirmasi</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+        <div>
+          <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#1C2433" }}>Manajemen Toko & Produk</h1>
+          <p className="text-sm" style={{ color: "var(--text-light)" }}>Kelola pesanan pelanggan dan katalog produk Civilians.</p>
+        </div>
+        <div className="flex gap-2">
+           <button onClick={() => setView("orders")} 
+             className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${view === "orders" ? "bg-primary text-white shadow-lg shadow-blue-500/20" : "bg-white text-slate-500 border border-slate-200"}`}>
+             Pesanan Masuk
+           </button>
+           <button onClick={() => setView("products")}
+             className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${view === "products" ? "bg-primary text-white shadow-lg shadow-blue-500/20" : "bg-white text-slate-500 border border-slate-200"}`}>
+             Katalog Produk
+           </button>
+        </div>
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         {[
-          { label: "Total Pesanan", val: data.length, color: "#546E7A" },
-          { label: "Selesai", val: data.filter(o => o.status === "Selesai").length, color: "#00897B" },
-          { label: "Diproses", val: data.filter(o => o.status === "Diproses").length, color: "#546E7A" },
-          { label: "Menunggu", val: data.filter(o => o.status === "Menunggu").length, color: "#FFA000" },
+          { label: "Total Pesanan", val: data.length, color: "var(--primary)" },
+          { label: "Pendapatan", val: `Rp ${totalRevenue.toLocaleString("id")}`, color: "#00897B" },
+          { label: "Produk Aktif", val: products.length, color: "#475569" },
+          { label: "Stok Tipis", val: "2", color: "#FFA000" },
         ].map(({ label, val, color }) => (
-          <div key={label} className="card p-4 text-center" style={{ borderTop: `2px solid ${color}` }}>
+          <div key={label} className="card p-5 bg-white shadow-sm border-none">
+            <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "var(--text-light)" }}>{label}</p>
             <p className="font-bold text-xl" style={{ color, fontFamily: "'Space Grotesk', sans-serif" }}>{val}</p>
-            <p className="text-xs" style={{ color: "var(--text-light)" }}>{label}</p>
           </div>
-        ))}
-      </div>
-
-      {/* Filter */}
-      <div className="flex gap-2 mb-4 flex-wrap">
-        {["Semua", "Selesai", "Diproses", "Menunggu"].map((s) => (
-          <button key={s} onClick={() => setStatusFilter(s)}
-            className="px-4 py-2 rounded-lg text-xs font-medium transition-all"
-            style={{ background: statusFilter === s ? "var(--green)" : "rgba(84,110,122,0.08)", color: statusFilter === s ? "white" : "var(--text-secondary)" }}>
-            {s}
-          </button>
         ))}
       </div>
 
       <AnimatedSection>
-        <div className="card overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead>
-                <tr style={{ background: "rgba(84,110,122,0.06)", borderBottom: "1px solid var(--border)" }}>
-                  {["ID", "Pengguna", "Produk", "Kategori", "Status", "Total", "Tanggal", "Aksi"].map((h) => (
-                    <th key={h} className="px-4 py-3 text-left font-bold" style={{ color: "var(--text-light)" }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((o) => (
-                  <tr key={o.id} style={{ borderBottom: "1px solid rgba(84,110,122,0.06)" }}>
-                    <td className="px-4 py-3 font-mono" style={{ color: "var(--slate)" }}>{o.id}</td>
-                    <td className="px-4 py-3">
-                      <p className="font-semibold" style={{ color: "#1C2433" }}>{o.user}</p>
-                      <p style={{ color: "var(--text-light)" }}>{o.email}</p>
-                    </td>
-                    <td className="px-4 py-3 font-medium" style={{ color: "var(--text-secondary)", maxWidth: 160 }}>{o.item}</td>
-                    <td className="px-4 py-3"><span className="tag-green">{o.category}</span></td>
-                    <td className="px-4 py-3">
-                      <span className="px-2 py-0.5 rounded-full text-xs font-semibold"
-                        style={{ background: `${statusColors[o.status]}20`, color: statusColors[o.status] }}>
-                        {o.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 font-bold" style={{ color: "var(--burgundy)" }}>Rp {o.amount.toLocaleString("id")}</td>
-                    <td className="px-4 py-3" style={{ color: "var(--text-light)" }}>{o.date}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5">
-                        {o.status === "Menunggu" && (
-                          <>
-                            <button onClick={() => confirm(o.id)} className="p-1.5 rounded-lg" style={{ color: "var(--green)", background: "rgba(0,137,123,0.1)" }}>
-                              <CheckCircle2 size={12} />
-                            </button>
-                            <button onClick={() => cancel(o.id)} className="p-1.5 rounded-lg" style={{ color: "var(--burgundy)", background: "rgba(128,0,32,0.08)" }}>
-                              <XCircle size={12} />
-                            </button>
-                          </>
-                        )}
-                        {o.status === "Selesai" && (
-                          <button className="p-1.5 rounded-lg" style={{ color: "var(--slate)", background: "rgba(84,110,122,0.08)" }}>
-                            <Download size={12} />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
+        {view === "orders" ? (
+          <div className="card overflow-hidden border-none shadow-sm">
+            <div className="p-4 border-b flex items-center justify-between bg-white overflow-x-auto gap-2">
+              <div className="flex gap-2">
+                {["Semua", "Selesai", "Diproses", "Menunggu"].map((s) => (
+                  <button key={s} onClick={() => setStatusFilter(s)}
+                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${statusFilter === s ? "bg-slate-900 text-white" : "bg-slate-50 text-slate-500"}`}>
+                    {s}
+                  </button>
                 ))}
-              </tbody>
-            </table>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-slate-50 text-slate-500 uppercase tracking-wider font-bold">
+                    {["ID", "Pengguna", "Produk", "Status", "Total", "Aksi"].map((h) => (
+                      <th key={h} className="px-5 py-4 text-left">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 bg-white">
+                  {filtered.map((o) => (
+                    <tr key={o.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-5 py-4 font-mono text-slate-400">{o.id}</td>
+                      <td className="px-5 py-4">
+                        <p className="font-bold text-slate-700">{o.user}</p>
+                        <p className="text-[10px] text-slate-400">{o.email}</p>
+                      </td>
+                      <td className="px-5 py-4 font-medium text-slate-600">{o.item}</td>
+                      <td className="px-5 py-4">
+                        <span className="px-2 py-1 rounded-full text-[10px] font-bold uppercase"
+                          style={{ background: `${statusColors[o.status]}15`, color: statusColors[o.status] }}>
+                          {o.status}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4 font-bold text-blue-600">Rp {o.amount.toLocaleString("id")}</td>
+                      <td className="px-5 py-4 text-right">
+                        <div className="flex items-center gap-2 justify-end">
+                          {o.status === "Menunggu" && (
+                            <>
+                              <button onClick={() => confirm(o.id)} className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-green-50 text-green-700 font-bold hover:bg-green-100 transition-all text-[10px] uppercase">
+                                <CheckCircle2 size={12} /> Selesai
+                              </button>
+                              <button onClick={() => cancel(o.id)} className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-red-50 text-red-600 font-bold hover:bg-red-100 transition-all text-[10px] uppercase">
+                                <XCircle size={12} /> Batal
+                              </button>
+                            </>
+                          )}
+                          {o.status === "Selesai" && (
+                            <button className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-slate-50 text-slate-500 font-bold text-[10px] uppercase">
+                              <Download size={12} /> Unduh
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="card overflow-hidden border-none shadow-sm">
+            <div className="p-5 border-b bg-white flex items-center justify-between">
+              <h3 className="font-bold text-slate-800">Katalog Produk</h3>
+              <button className="flex items-center gap-2 px-3 py-2 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-black transition-all">
+                <Plus size={14} /> Tambah Produk
+              </button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-slate-50 text-slate-500 uppercase tracking-wider font-bold">
+                    {["Nama Produk", "Kategori", "Harga", "Stok", "Aksi"].map((h) => (
+                      <th key={h} className="px-5 py-4 text-left">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 bg-white">
+                  {products.map((p) => (
+                    <tr key={p.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-5 py-4 font-bold text-slate-700">{p.name}</td>
+                      <td className="px-5 py-4 capitalize text-slate-500">{p.category}</td>
+                      <td className="px-5 py-4 font-bold">Rp {p.price.toLocaleString("id")}</td>
+                      <td className="px-5 py-4">
+                        <span className={`px-2 py-1 rounded font-bold text-[10px] ${p.stock > 0 ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
+                          {p.stock > 0 ? `${p.stock} Unit` : "Habis"}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4 text-right">
+                        <div className="flex items-center gap-3 justify-end">
+                           <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 font-bold hover:bg-slate-200 transition-all text-[10px] uppercase">
+                             Edit
+                           </button>
+                           <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 text-red-600 font-bold hover:bg-red-100 transition-all text-[10px] uppercase">
+                             Hapus
+                           </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </AnimatedSection>
     </div>
   );

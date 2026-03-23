@@ -112,10 +112,12 @@ export default function AdminKursusPage() {
                         </span>
                       </td>
                       <td className="px-5 py-4 text-right">
-                        <div className="flex items-center gap-2">
-                          <button className="p-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200"><Edit2 size={12} /></button>
-                          <button onClick={() => toggleStatus(k.id)} className="p-2 rounded-lg bg-blue-50 text-blue-600">
-                            {k.status === "Aktif" ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
+                        <div className="flex items-center gap-2 justify-end">
+                          <button className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-slate-100 text-slate-700 font-bold hover:bg-slate-200 transition-all text-[10px] uppercase">
+                            <Edit2 size={12} /> Edit
+                          </button>
+                          <button onClick={() => toggleStatus(k.id)} className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-blue-50 text-blue-700 font-bold transition-all text-[10px] uppercase">
+                            {k.status === "Aktif" ? <ToggleRight size={14} /> : <ToggleLeft size={14} />} Status
                           </button>
                         </div>
                       </td>

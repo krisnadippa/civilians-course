@@ -109,7 +109,7 @@ export default function AdminDashboard() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#1C2433" }}>
-            Ringkasan Platform 📊
+            Panel Ringkasan Platform
           </h1>
           <p className="text-sm" style={{ color: "var(--text-light)" }}>Data real-time ekosistem Civilians</p>
         </div>

@@ -102,12 +102,12 @@ export default function AdminMentorPage() {
                     </td>
                     <td className="py-3">
                       {b.status === "Pending" && (
-                        <div className="flex gap-1.5">
-                          <button onClick={() => confirm(b.id)} className="p-1.5 rounded-lg" style={{ color: "var(--green)", background: "rgba(0,137,123,0.1)" }}>
-                            <CheckCircle2 size={13} />
+                        <div className="flex gap-2">
+                          <button onClick={() => confirm(b.id)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-green-100 text-green-700 font-bold hover:bg-green-200 transition-all text-[10px] uppercase">
+                            <CheckCircle2 size={12} /> Setujui
                           </button>
-                          <button onClick={() => reject(b.id)} className="p-1.5 rounded-lg" style={{ color: "var(--burgundy)", background: "rgba(128,0,32,0.08)" }}>
-                            <XCircle size={13} />
+                          <button onClick={() => reject(b.id)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-red-50 text-red-600 font-bold hover:bg-red-100 transition-all text-[10px] uppercase">
+                            <XCircle size={12} /> Tolak
                           </button>
                         </div>
                       )}
