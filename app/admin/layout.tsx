@@ -5,15 +5,16 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Users, UserCheck, BookOpen,
-  ShoppingBag, BarChart2, Building2, LogOut, X, ChevronRight, Bell
+  ShoppingBag, BarChart2, Building2, LogOut, X, ChevronRight, Bell, Wrench
 } from "lucide-react";
 
 const sidebarItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/pengguna", label: "Pengguna", icon: Users },
+  { href: "/admin/jasa", label: "Layanan Jasa", icon: Wrench },
   { href: "/admin/mentor", label: "Mentor", icon: UserCheck },
   { href: "/admin/kursus", label: "Kursus", icon: BookOpen },
   { href: "/admin/toko", label: "Toko & Pesanan", icon: ShoppingBag },
+  { href: "/admin/pengguna", label: "Pengguna", icon: Users },
   { href: "/admin/analitik", label: "Analitik", icon: BarChart2 },
 ];
 
@@ -30,7 +31,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       >
         {/* Logo */}
         <div className="px-4 py-5 flex items-center gap-3" style={{ borderBottom: "1px solid rgba(0,137,123,0.1)" }}>
-          <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: "var(--green)" }}>
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: "var(--primary)" }}>
             <Building2 size={20} color="white" />
           </div>
           {!collapsed && (
@@ -58,9 +59,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 href={item.href}
                 className="flex items-center gap-3 px-3 py-3 rounded-xl mb-1 transition-all group"
                 style={{
-                  background: active ? "rgba(0,137,123,0.2)" : "transparent",
-                  color: active ? "var(--green-light)" : "rgba(255,255,255,0.5)",
-                  borderLeft: active ? "2px solid var(--green-light)" : "2px solid transparent",
+                  background: active ? "rgba(26,86,219,0.15)" : "transparent",
+                  color: active ? "white" : "rgba(255,255,255,0.5)",
+                  borderLeft: active ? "3px solid var(--primary)" : "3px solid transparent",
                 }}
                 title={collapsed ? item.label : ""}
               >
@@ -100,7 +101,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <span className="absolute top-1 right-1 w-2 h-2 rounded-full" style={{ background: "var(--burgundy)" }} />
             </button>
             <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold"
-              style={{ background: "var(--green)", fontFamily: "'Space Grotesk', sans-serif" }}>
+              style={{ background: "var(--primary)", fontFamily: "'Space Grotesk', sans-serif" }}>
               AD
             </div>
           </div>

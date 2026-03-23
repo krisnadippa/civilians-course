@@ -33,88 +33,141 @@ export default function AdminKursusPage() {
     ));
   };
 
+  const [view, setView] = useState("courses"); // "courses" or "students"
+
+  const students = [
+    { id: 1, name: "Ahmad Fauzi", course: "Analisis Struktur Beton", progress: "45%", date: "23 Mar 2026", status: "Aktif" },
+    { id: 2, name: "Siska Putri", course: "RAB & Estimasi Biaya", progress: "100%", date: "22 Mar 2026", status: "Selesai" },
+    { id: 3, name: "Bambang W.", course: "Gambar Teknik AutoCAD", progress: "12%", date: "21 Mar 2026", status: "Aktif" },
+    { id: 4, name: "Anita Sari", course: "Civil 3D Surface Design", progress: "0%", date: "20 Mar 2026", status: "Baru" },
+  ];
+
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
         <div>
-          <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#1C2433" }}>Manajemen Kursus</h1>
-          <p className="text-sm" style={{ color: "var(--text-light)" }}>{kursus.length} kursus · {kursus.filter(k => k.status === "Aktif").length} aktif</p>
+          <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#1C2433" }}>Manajemen Kursus Online</h1>
+          <p className="text-sm" style={{ color: "var(--text-light)" }}>Kelola kurikulum dan pantau progres siswa secara real-time.</p>
         </div>
-        <button className="btn-primary" style={{ padding: "10px 20px", fontSize: "0.85rem" }}>
-          <Plus size={15} /> Tambah Kursus
-        </button>
+        <div className="flex gap-2">
+           <button onClick={() => setView("courses")} 
+             className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${view === "courses" ? "bg-primary text-white shadow-lg shadow-blue-500/20" : "bg-white text-slate-500 border border-slate-200"}`}>
+             Manajemen Konten
+           </button>
+           <button onClick={() => setView("students")}
+             className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${view === "students" ? "bg-primary text-white shadow-lg shadow-blue-500/20" : "bg-white text-slate-500 border border-slate-200"}`}>
+             Data Siswa
+           </button>
+        </div>
       </div>
 
       {/* Summary */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         {[
-          { label: "Total Kursus", val: kursus.length, color: "#546E7A" },
-          { label: "Kursus Aktif", val: kursus.filter(k => k.status === "Aktif").length, color: "#00897B" },
-          { label: "Total Siswa", val: kursus.reduce((s, k) => s + k.students, 0).toLocaleString("id"), color: "#800020" },
-          { label: "Total Modul", val: kursus.reduce((s, k) => s + k.modules, 0), color: "#546E7A" },
+          { label: "Total Kursus", val: kursus.length, color: "var(--primary)" },
+          { label: "Siswa Aktif", val: "1,248", color: "#475569" },
+          { label: "Penyelesaian", val: "84%", color: "#00897B" },
+          { label: "Baru Hari Ini", val: "+12", color: "#3B82F6" },
         ].map(({ label, val, color }) => (
-          <div key={label} className="card p-4 text-center" style={{ borderTop: `2px solid ${color}` }}>
-            <p className="font-bold text-lg" style={{ color, fontFamily: "'Space Grotesk', sans-serif" }}>{val}</p>
-            <p className="text-xs" style={{ color: "var(--text-light)" }}>{label}</p>
+          <div key={label} className="card p-5 bg-white shadow-sm border-none">
+            <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "var(--text-light)" }}>{label}</p>
+            <p className="font-bold text-2xl" style={{ color: color, fontFamily: "'Space Grotesk', sans-serif" }}>{val}</p>
           </div>
         ))}
       </div>
 
-      {/* Search */}
-      <div className="card p-3 mb-4 flex items-center gap-2">
-        <input type="text" placeholder="Cari kursus..." className="flex-1 text-sm outline-none"
-          style={{ background: "transparent", color: "var(--text-primary)" }}
-          value={search} onChange={(e) => setSearch(e.target.value)}
-        />
-      </div>
-
       <AnimatedSection>
-        <div className="card overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead>
-                <tr style={{ background: "rgba(84,110,122,0.06)", borderBottom: "1px solid var(--border)" }}>
-                  {["#", "Judul Kursus", "Kategori", "Level", "Siswa", "Modul", "Status", "Aksi"].map((h) => (
-                    <th key={h} className="px-4 py-3 text-left font-bold" style={{ color: "var(--text-light)" }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((k) => (
-                  <tr key={k.id} style={{ borderBottom: "1px solid rgba(84,110,122,0.06)" }}>
-                    <td className="px-4 py-3" style={{ color: "var(--text-light)" }}>{k.id}</td>
-                    <td className="px-4 py-3 font-medium" style={{ color: "#1C2433", maxWidth: 200 }}>{k.title}</td>
-                    <td className="px-4 py-3">
-                      <span className="px-2 py-0.5 rounded-full text-xs font-semibold"
-                        style={{ background: `${categoryColors[k.category]}18`, color: categoryColors[k.category] }}>
-                        {k.category}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3" style={{ color: "var(--text-secondary)" }}>{k.level}</td>
-                    <td className="px-4 py-3 font-bold text-center" style={{ color: "#1C2433" }}>{k.students}</td>
-                    <td className="px-4 py-3 text-center" style={{ color: "var(--text-secondary)" }}>{k.modules}</td>
-                    <td className="px-4 py-3">
-                      <span className="px-2 py-0.5 rounded-full text-xs font-semibold"
-                        style={{ background: k.status === "Aktif" ? "rgba(0,137,123,0.12)" : "rgba(84,110,122,0.12)", color: k.status === "Aktif" ? "var(--green-dark)" : "var(--slate)" }}>
-                        {k.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5">
-                        <button className="p-1.5 rounded-lg" style={{ color: "var(--green)", background: "rgba(0,137,123,0.08)" }}><Edit2 size={12} /></button>
-                        <button onClick={() => toggleStatus(k.id)} className="p-1.5 rounded-lg" style={{ color: "var(--slate)", background: "rgba(84,110,122,0.08)" }}>
-                          {k.status === "Aktif" ? <ToggleRight size={12} /> : <ToggleLeft size={12} />}
-                        </button>
-                        <button className="p-1.5 rounded-lg" style={{ color: "var(--burgundy)", background: "rgba(128,0,32,0.08)" }}><Trash2 size={12} /></button>
-                      </div>
-                    </td>
+        {view === "courses" ? (
+          <div className="card overflow-hidden border-none shadow-sm">
+            <div className="p-4 border-b flex items-center justify-between bg-white">
+              <input type="text" placeholder="Cari judul kursus..." className="text-sm outline-none w-64 p-2 bg-slate-50 rounded-lg"
+                value={search} onChange={(e) => setSearch(e.target.value)}
+              />
+              <button className="flex items-center gap-2 px-3 py-2 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-black transition-all">
+                <Plus size={14} /> Tambah Kursus
+              </button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-slate-50 text-slate-500 uppercase tracking-wider font-bold">
+                    {["#", "Judul Kursus", "Kategori", "Level", "Siswa", "Status", "Aksi"].map((h) => (
+                      <th key={h} className="px-5 py-4 text-left">{h}</th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-100 bg-white">
+                  {filtered.map((k) => (
+                    <tr key={k.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-5 py-4 text-slate-400 font-medium">{k.id}</td>
+                      <td className="px-5 py-4 font-bold text-slate-700">{k.title}</td>
+                      <td className="px-5 py-4">
+                        <span className="px-2 py-1 rounded bg-blue-50 text-blue-600 font-bold text-[10px] uppercase">{k.category}</span>
+                      </td>
+                      <td className="px-5 py-4 text-slate-500">{k.level}</td>
+                      <td className="px-5 py-4 font-bold">{k.students.toLocaleString("id")}</td>
+                      <td className="px-5 py-4">
+                        <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${k.status === "Aktif" ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500"}`}>
+                          {k.status}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4 text-right">
+                        <div className="flex items-center gap-2">
+                          <button className="p-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200"><Edit2 size={12} /></button>
+                          <button onClick={() => toggleStatus(k.id)} className="p-2 rounded-lg bg-blue-50 text-blue-600">
+                            {k.status === "Aktif" ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="card overflow-hidden border-none shadow-sm">
+            <div className="p-5 border-b bg-white flex items-center justify-between">
+              <h3 className="font-bold text-slate-800">Siswa Terdaftar</h3>
+              <span className="text-xs text-slate-400">Menampilkan {students.length} pendaftaran terbaru</span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-slate-50 text-slate-500 uppercase tracking-wider font-bold">
+                    {["Nama Siswa", "Kursus", "Progres", "Tanggal Daftar", "Status"].map((h) => (
+                      <th key={h} className="px-5 py-4 text-left">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 bg-white">
+                  {students.map((s) => (
+                    <tr key={s.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-5 py-4">
+                        <p className="font-bold text-slate-700">{s.name}</p>
+                      </td>
+                      <td className="px-5 py-4 font-medium text-slate-600">{s.course}</td>
+                      <td className="px-5 py-4 w-48">
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-primary" style={{ width: s.progress }} />
+                          </div>
+                          <span className="font-bold">{s.progress}</span>
+                        </div>
+                      </td>
+                      <td className="px-5 py-4 text-slate-400">{s.date}</td>
+                      <td className="px-5 py-4">
+                         <span className="px-2 py-1 rounded bg-blue-50 text-blue-600 font-bold text-[10px] uppercase">{s.status}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </AnimatedSection>
     </div>
   );
 }
+

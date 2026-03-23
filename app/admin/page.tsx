@@ -5,15 +5,15 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   Users, BookOpen, ShoppingBag, TrendingUp, ArrowUpRight,
-  Calendar, CheckCircle2, Clock, UserCheck, AlertCircle
+  Calendar, CheckCircle2, Clock, UserCheck, AlertCircle, Wrench
 } from "lucide-react";
 import AnimatedSection from "../_components/AnimatedSection";
 
 const kpiCards = [
-  { label: "Total Pengguna", value: "2,418", change: "+12.4%", up: true, icon: Users, color: "#00897B" },
-  { label: "Kursus Aktif", value: "48", change: "+3", up: true, icon: BookOpen, color: "#546E7A" },
-  { label: "Booking Bulan Ini", value: "87", change: "+23.1%", up: true, icon: Calendar, color: "#800020" },
-  { label: "Pendapatan (Rp)", value: "18,4 Jt", change: "+8.7%", up: true, icon: TrendingUp, color: "#00897B" },
+  { label: "Total Pengguna", value: "2,418", change: "+12.4%", up: true, icon: Users, color: "var(--primary)" },
+  { label: "Kursus Aktif", value: "48", change: "+3", up: true, icon: BookOpen, color: "#475569" },
+  { label: "Booking Mentor", value: "87", change: "+23.1%", up: true, icon: Calendar, color: "#3B82F6" },
+  { label: "Permintaan Jasa", value: "12", change: "+5", up: true, icon: Wrench, color: "#1E293B" },
 ];
 
 const recentOrders = [
@@ -91,37 +91,45 @@ function BookingChart() {
   );
 }
 
+
+
 const statusColors: Record<string, string> = {
   "Selesai": "#00897B",
-  "Diproses": "#546E7A",
+  "Diproses": "#1A56DB",
   "Menunggu": "#FFA000",
   "Dikonfirmasi": "#00897B",
   "Pending": "#FFA000",
+  "Tinggi": "#DC2626",
 };
 
 export default function AdminDashboard() {
   return (
     <div>
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#1C2433" }}>
-          Ringkasan Platform 📊
-        </h1>
-        <p className="text-sm" style={{ color: "var(--text-light)" }}>Kamis, 19 Maret 2026 — Data real-time Civilians</p>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#1C2433" }}>
+            Ringkasan Platform 📊
+          </h1>
+          <p className="text-sm" style={{ color: "var(--text-light)" }}>Data real-time ekosistem Civilians</p>
+        </div>
+        <div className="flex gap-2">
+          <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-widest">Sistem Aktif</span>
+        </div>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {kpiCards.map((kpi, i) => (
           <AnimatedSection key={kpi.label} delay={i * 0.07}>
-            <div className="card p-5" style={{ borderTop: `3px solid ${kpi.color}` }}>
+            <div className="card p-5 border-none shadow-sm shadow-blue-500/5 bg-white">
               <div className="flex items-start justify-between mb-3">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-                  style={{ background: `${kpi.color}15` }}>
+                  style={{ background: `${kpi.color}10` }}>
                   <kpi.icon size={20} style={{ color: kpi.color }} />
                 </div>
                 <span className="text-xs font-semibold flex items-center gap-0.5"
-                  style={{ color: kpi.up ? "#00897B" : "#800020" }}>
+                  style={{ color: kpi.up ? "var(--primary)" : "#800020" }}>
                   <ArrowUpRight size={13} />
                   {kpi.change}
                 </span>
@@ -130,7 +138,7 @@ export default function AdminDashboard() {
                 style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#1C2433" }}>
                 {kpi.value}
               </p>
-              <p className="text-xs" style={{ color: "var(--text-light)" }}>{kpi.label}</p>
+              <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--text-light)" }}>{kpi.label}</p>
             </div>
           </AnimatedSection>
         ))}
