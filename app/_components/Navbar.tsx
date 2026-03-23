@@ -23,111 +23,122 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => { document.body.style.overflow = "unset"; };
+  }, [open]);
+
   const isAdmin = pathname.startsWith("/admin");
   if (isAdmin) return null;
 
   const isSolid = scrolled || open;
 
   return (
-    <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isSolid ? "glass py-3" : "bg-transparent py-5"
-      }`}
-    >
-      <nav className="container-main flex items-center justify-between">
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-2.5 group">
-          <div
-            className="w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-300 group-hover:scale-105"
+    <>
+      <header
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+          isSolid ? "glass py-3" : "bg-transparent py-5"
+        }`}
+      >
+        <nav className="container-main flex items-center justify-between">
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <div
+              className="w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-300 group-hover:scale-105"
+              style={{ 
+                background: isSolid ? "var(--primary)" : "white",
+                boxShadow: isSolid ? "var(--shadow-md)" : "none",
+              }}
+            >
+              <Building2 size={20} color={isSolid ? "white" : "var(--primary)"} strokeWidth={2.5} />
+            </div>
+            <div>
+              <span
+                className="font-bold text-base leading-none block transition-colors duration-300"
+                style={{ fontFamily: "'Space Grotesk', sans-serif", color: isSolid ? "var(--text-primary)" : "white", letterSpacing: "0.05em" }}
+              >
+                CIVILIANS
+              </span>
+              <span className="text-[9px] font-bold leading-none tracking-widest uppercase transition-colors duration-300" style={{ color: isSolid ? "var(--primary)" : "rgba(255,255,255,0.8)" }}>
+                Teknik Sipil
+              </span>
+            </div>
+          </Link>
+
+          {/* Desktop Nav */}
+          <ul className="hidden md:flex items-center gap-1">
+            {navLinks.map((link) => {
+              const active = pathname === link.href;
+              return (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-1.5"
+                    style={{
+                      background: active ? (isSolid ? "var(--primary)" : "rgba(255,255,255,0.2)") : "transparent",
+                      color: active ? "white" : (isSolid ? "var(--text-secondary)" : "rgba(255,255,255,0.85)"),
+                    }}
+                    onMouseEnter={(e) => { 
+                      if (!active) (e.currentTarget as HTMLElement).style.background = isSolid ? "var(--blue-50)" : "rgba(255,255,255,0.1)"; 
+                      if (!active) (e.currentTarget as HTMLElement).style.color = isSolid ? "var(--primary)" : "white";
+                    }}
+                    onMouseLeave={(e) => { 
+                      if (!active) (e.currentTarget as HTMLElement).style.background = "transparent"; 
+                      if (!active) (e.currentTarget as HTMLElement).style.color = isSolid ? "var(--text-secondary)" : "rgba(255,255,255,0.85)";
+                    }}
+                  >
+                    <link.icon size={14} />
+                    {link.label}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+
+          {/* CTA */}
+          <div className="hidden md:flex items-center gap-3">
+            <Link
+              href="/login"
+              className="flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg transition-all"
+              style={{ color: isSolid ? "var(--text-secondary)" : "rgba(255,255,255,0.85)" }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = isSolid ? "var(--primary)" : "white"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = isSolid ? "var(--text-secondary)" : "rgba(255,255,255,0.85)"; }}
+            >
+              <LogIn size={14} /> Masuk
+            </Link>
+            <Link href="/login?tab=register" 
+              className="rounded-lg font-semibold transition-all inline-flex items-center hover:scale-105 active:scale-95" 
+              style={{ 
+                padding: "9px 18px", 
+                fontSize: "0.85rem",
+                background: isSolid ? "var(--primary)" : "white",
+                color: isSolid ? "white" : "var(--primary)",
+                border: "none",
+                boxShadow: isSolid ? "var(--shadow-md)" : "none",
+              }}>
+              Daftar Gratis
+            </Link>
+          </div>
+
+          {/* Mobile Toggle */}
+          <button
+            className="md:hidden p-2 rounded-lg transition-all border"
+            onClick={() => setOpen(!open)}
+            aria-label="Toggle menu"
             style={{ 
-              background: isSolid ? "var(--primary)" : "white",
-              boxShadow: isSolid ? "var(--shadow-md)" : "none",
+              color: isSolid ? "var(--text-primary)" : "white", 
+              borderColor: isSolid ? "var(--border)" : "rgba(255,255,255,0.3)", 
+              background: isSolid ? "white" : "transparent" 
             }}
           >
-            <Building2 size={20} color={isSolid ? "white" : "var(--primary)"} strokeWidth={2.5} />
-          </div>
-          <div>
-            <span
-              className="font-bold text-base leading-none block transition-colors duration-300"
-              style={{ fontFamily: "'Space Grotesk', sans-serif", color: isSolid ? "var(--text-primary)" : "white", letterSpacing: "0.05em" }}
-            >
-              CIVILIANS
-            </span>
-            <span className="text-[9px] font-bold leading-none tracking-widest uppercase transition-colors duration-300" style={{ color: isSolid ? "var(--primary)" : "rgba(255,255,255,0.8)" }}>
-              Teknik Sipil
-            </span>
-          </div>
-        </Link>
-
-        {/* Desktop Nav */}
-        <ul className="hidden md:flex items-center gap-1">
-          {navLinks.map((link) => {
-            const active = pathname === link.href;
-            return (
-              <li key={link.href}>
-                <Link
-                  href={link.href}
-                  className="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-1.5"
-                  style={{
-                    background: active ? (isSolid ? "var(--primary)" : "rgba(255,255,255,0.2)") : "transparent",
-                    color: active ? "white" : (isSolid ? "var(--text-secondary)" : "rgba(255,255,255,0.85)"),
-                  }}
-                  onMouseEnter={(e) => { 
-                    if (!active) (e.currentTarget as HTMLElement).style.background = isSolid ? "var(--blue-50)" : "rgba(255,255,255,0.1)"; 
-                    if (!active) (e.currentTarget as HTMLElement).style.color = isSolid ? "var(--primary)" : "white";
-                  }}
-                  onMouseLeave={(e) => { 
-                    if (!active) (e.currentTarget as HTMLElement).style.background = "transparent"; 
-                    if (!active) (e.currentTarget as HTMLElement).style.color = isSolid ? "var(--text-secondary)" : "rgba(255,255,255,0.85)";
-                  }}
-                >
-                  <link.icon size={14} />
-                  {link.label}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-
-        {/* CTA */}
-        <div className="hidden md:flex items-center gap-3">
-          <Link
-            href="/login"
-            className="flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg transition-all"
-            style={{ color: isSolid ? "var(--text-secondary)" : "rgba(255,255,255,0.85)" }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = isSolid ? "var(--primary)" : "white"; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = isSolid ? "var(--text-secondary)" : "rgba(255,255,255,0.85)"; }}
-          >
-            <LogIn size={14} /> Masuk
-          </Link>
-          <Link href="/login?tab=register" 
-            className="rounded-lg font-semibold transition-all inline-flex items-center hover:scale-105 active:scale-95" 
-            style={{ 
-              padding: "9px 18px", 
-              fontSize: "0.85rem",
-              background: isSolid ? "var(--primary)" : "white",
-              color: isSolid ? "white" : "var(--primary)",
-              border: "none",
-              boxShadow: isSolid ? "var(--shadow-md)" : "none",
-            }}>
-            Daftar Gratis
-          </Link>
-        </div>
-
-        {/* Mobile Toggle */}
-        <button
-          className="md:hidden p-2 rounded-lg transition-all border"
-          onClick={() => setOpen(!open)}
-          aria-label="Toggle menu"
-          style={{ 
-            color: isSolid ? "var(--text-primary)" : "white", 
-            borderColor: isSolid ? "var(--border)" : "rgba(255,255,255,0.3)", 
-            background: isSolid ? "white" : "transparent" 
-          }}
-        >
-          {open ? <X size={20} /> : <Menu size={20} />}
-        </button>
-      </nav>
+            {open ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </nav>
+      </header>
 
       {/* Mobile Sidebar */}
       <AnimatePresence>
@@ -139,7 +150,7 @@ export default function Navbar() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setOpen(false)}
-              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] md:hidden"
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[90] md:hidden"
             />
 
             {/* Sidebar */}
@@ -148,7 +159,7 @@ export default function Navbar() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed top-0 right-0 bottom-0 w-[280px] bg-white z-[70] md:hidden shadow-2xl flex flex-col"
+              className="fixed inset-y-0 right-0 w-[280px] bg-white z-[100] md:hidden shadow-2xl flex flex-col h-[100dvh]"
             >
               {/* Header */}
               <div className="p-5 border-b flex items-center justify-between" style={{ borderColor: "var(--border)" }}>
@@ -204,6 +215,6 @@ export default function Navbar() {
           </>
         )}
       </AnimatePresence>
-    </header>
+    </>
   );
 }

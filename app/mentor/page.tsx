@@ -25,7 +25,7 @@ const mentors = [
     id: 1,
     avatar: "BS",
     color: "var(--primary)",
-    name: "Ratna Essya",
+    name: "Eka Juniarta",
     title: "Pakar Analisis & Desain Struktur",
     bio: "20+ tahun pengalaman di bidang teknik struktur. Terlibat dalam proyek jembatan nasional dan gedung bertingkat tinggi di berbagai kota besar Indonesia.",
     expertise: [
@@ -51,7 +51,7 @@ const mentors = [
     id: 2,
     avatar: "SR",
     color: "#1345B5",
-    name: "Eka Juniarta",
+    name: "Ratna Essya",
     title: "Spesialis Manajemen Konstruksi & RAB",
     bio: "Praktisi aktif manajemen proyek konstruksi dengan portofolio proyek senilai lebih dari Rp 500 miliar. Ahli penyusunan RAB dan penjadwalan proyek.",
     expertise: [
