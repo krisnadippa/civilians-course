@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { CheckCircle2, XCircle, Download, Eye, Package, Plus } from "lucide-react";
 import AnimatedSection from "../../_components/AnimatedSection";
 
@@ -44,14 +45,20 @@ export default function AdminTokoPage() {
           <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#1C2433" }}>Manajemen Toko & Produk</h1>
           <p className="text-sm" style={{ color: "var(--text-light)" }}>Kelola pesanan pelanggan dan katalog produk Civilians.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex bg-slate-100/50 p-1 rounded-xl border border-slate-200/60 relative">
            <button onClick={() => setView("orders")} 
-             className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${view === "orders" ? "bg-primary text-white shadow-lg shadow-blue-500/20" : "bg-white text-slate-500 border border-slate-200"}`}>
-             Pesanan Masuk
+             className={`relative z-10 px-6 py-2 rounded-lg text-xs font-bold transition-all duration-300 ${view === "orders" ? "text-white" : "text-slate-500 hover:text-slate-700"}`}>
+             {view === "orders" && (
+                <motion.div layoutId="shopTab" className="absolute inset-0 bg-primary rounded-lg shadow-md shadow-blue-500/20" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />
+             )}
+             <span className="relative z-10">Pesanan Masuk</span>
            </button>
            <button onClick={() => setView("products")}
-             className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${view === "products" ? "bg-primary text-white shadow-lg shadow-blue-500/20" : "bg-white text-slate-500 border border-slate-200"}`}>
-             Katalog Produk
+             className={`relative z-10 px-6 py-2 rounded-lg text-xs font-bold transition-all duration-300 ${view === "products" ? "text-white" : "text-slate-500 hover:text-slate-700"}`}>
+             {view === "products" && (
+                <motion.div layoutId="shopTab" className="absolute inset-0 bg-primary rounded-lg shadow-md shadow-blue-500/20" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />
+             )}
+             <span className="relative z-10">Katalog Produk</span>
            </button>
         </div>
       </div>

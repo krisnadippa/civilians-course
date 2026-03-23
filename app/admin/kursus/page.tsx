@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { Plus, Edit2, Trash2, ToggleLeft, ToggleRight } from "lucide-react";
 import AnimatedSection from "../../_components/AnimatedSection";
 
@@ -49,14 +50,20 @@ export default function AdminKursusPage() {
           <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#1C2433" }}>Manajemen Kursus Online</h1>
           <p className="text-sm" style={{ color: "var(--text-light)" }}>Kelola kurikulum dan pantau progres siswa secara real-time.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex bg-slate-100/50 p-1 rounded-xl border border-slate-200/60 relative">
            <button onClick={() => setView("courses")} 
-             className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${view === "courses" ? "bg-primary text-white shadow-lg shadow-blue-500/20" : "bg-white text-slate-500 border border-slate-200"}`}>
-             Manajemen Konten
+             className={`relative z-10 px-6 py-2 rounded-lg text-xs font-bold transition-all duration-300 ${view === "courses" ? "text-white" : "text-slate-500 hover:text-slate-700"}`}>
+             {view === "courses" && (
+                <motion.div layoutId="activeTab" className="absolute inset-0 bg-primary rounded-lg shadow-md shadow-blue-500/20" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />
+             )}
+             <span className="relative z-10">Manajemen Konten</span>
            </button>
            <button onClick={() => setView("students")}
-             className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${view === "students" ? "bg-primary text-white shadow-lg shadow-blue-500/20" : "bg-white text-slate-500 border border-slate-200"}`}>
-             Data Siswa
+             className={`relative z-10 px-6 py-2 rounded-lg text-xs font-bold transition-all duration-300 ${view === "students" ? "text-white" : "text-slate-500 hover:text-slate-700"}`}>
+             {view === "students" && (
+                <motion.div layoutId="activeTab" className="absolute inset-0 bg-primary rounded-lg shadow-md shadow-blue-500/20" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />
+             )}
+             <span className="relative z-10">Data Siswa</span>
            </button>
         </div>
       </div>
