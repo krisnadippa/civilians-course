@@ -48,22 +48,18 @@ export default function Navbar() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 group">
             <div
-              className="w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-300 group-hover:scale-105"
-              style={{ 
-                background: isSolid ? "var(--primary)" : "white",
-                boxShadow: isSolid ? "var(--shadow-md)" : "none",
-              }}
+              className="w-9 h-9 rounded-lg flex items-center justify-center transition-transform duration-300 group-hover:scale-105 bg-blue-600 shadow-sm"
             >
-              <Building2 size={20} color={isSolid ? "white" : "var(--primary)"} strokeWidth={2.5} />
+              <Building2 size={20} color="white" strokeWidth={2.5} />
             </div>
             <div>
               <span
-                className="font-bold text-base leading-none block transition-colors duration-300"
-                style={{ fontFamily: "'Space Grotesk', sans-serif", color: isSolid ? "var(--text-primary)" : "white", letterSpacing: "0.05em" }}
+                className="font-bold text-base leading-none block text-slate-900"
+                style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: "0.05em" }}
               >
                 CIVILIANS
               </span>
-              <span className="text-[9px] font-bold leading-none tracking-widest uppercase transition-colors duration-300" style={{ color: isSolid ? "var(--primary)" : "rgba(255,255,255,0.8)" }}>
+              <span className="text-[9px] font-bold leading-none tracking-widest uppercase text-blue-600">
                 Teknik Sipil
               </span>
             </div>
@@ -77,21 +73,11 @@ export default function Navbar() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-1.5"
-                    style={{
-                      background: active ? (isSolid ? "var(--primary)" : "rgba(255,255,255,0.2)") : "transparent",
-                      color: active ? "white" : (isSolid ? "var(--text-secondary)" : "rgba(255,255,255,0.85)"),
-                    }}
-                    onMouseEnter={(e) => { 
-                      if (!active) (e.currentTarget as HTMLElement).style.background = isSolid ? "var(--blue-50)" : "rgba(255,255,255,0.1)"; 
-                      if (!active) (e.currentTarget as HTMLElement).style.color = isSolid ? "var(--primary)" : "white";
-                    }}
-                    onMouseLeave={(e) => { 
-                      if (!active) (e.currentTarget as HTMLElement).style.background = "transparent"; 
-                      if (!active) (e.currentTarget as HTMLElement).style.color = isSolid ? "var(--text-secondary)" : "rgba(255,255,255,0.85)";
-                    }}
+                    className={`px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200 flex items-center gap-1.5 ${
+                      active ? "bg-slate-900 text-white shadow-sm" : "bg-transparent text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                    }`}
                   >
-                    <link.icon size={14} />
+                    <link.icon size={14} className={active ? "text-blue-400" : "text-slate-400"} />
                     {link.label}
                   </Link>
                 </li>
@@ -103,37 +89,21 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-3">
             <Link
               href="/login"
-              className="flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg transition-all"
-              style={{ color: isSolid ? "var(--text-secondary)" : "rgba(255,255,255,0.85)" }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = isSolid ? "var(--primary)" : "white"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = isSolid ? "var(--text-secondary)" : "rgba(255,255,255,0.85)"; }}
+              className="flex items-center gap-1.5 text-sm font-bold px-3 py-2 rounded-lg transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-50"
             >
               <LogIn size={14} /> Masuk
             </Link>
             <Link href="/login?tab=register" 
-              className="rounded-lg font-semibold transition-all inline-flex items-center hover:scale-105 active:scale-95" 
-              style={{ 
-                padding: "9px 18px", 
-                fontSize: "0.85rem",
-                background: isSolid ? "var(--primary)" : "white",
-                color: isSolid ? "white" : "var(--primary)",
-                border: "none",
-                boxShadow: isSolid ? "var(--shadow-md)" : "none",
-              }}>
+              className="px-5 py-2.5 rounded-lg text-sm font-bold bg-blue-600 text-white hover:bg-blue-700 transition-all inline-flex items-center shadow-sm disabled:opacity-50">
               Daftar Gratis
             </Link>
           </div>
 
           {/* Mobile Toggle */}
           <button
-            className="md:hidden p-2 rounded-lg transition-all border"
+            className="md:hidden p-2 rounded-lg transition-all border border-slate-200 text-slate-700 hover:bg-slate-50"
             onClick={() => setOpen(!open)}
             aria-label="Toggle menu"
-            style={{ 
-              color: isSolid ? "var(--text-primary)" : "white", 
-              borderColor: isSolid ? "var(--border)" : "rgba(255,255,255,0.3)", 
-              background: isSolid ? "white" : "transparent" 
-            }}
           >
             {open ? <X size={20} /> : <Menu size={20} />}
           </button>
@@ -167,7 +137,7 @@ export default function Navbar() {
                   <div className="w-8 h-8 rounded flex items-center justify-center" style={{ background: "var(--primary)" }}>
                     <Building2 size={18} color="white" strokeWidth={2.5} />
                   </div>
-                  <span className="font-bold text-sm tracking-widest text-primary" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>CIVILIANS</span>
+                  <span className="font-bold text-sm tracking-widest text-blue-600" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>CIVILIANS</span>
                 </Link>
                 <button
                   onClick={() => setOpen(false)}
@@ -207,7 +177,7 @@ export default function Navbar() {
                 <Link href="/login" onClick={() => setOpen(false)} className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-bold border border-slate-200 bg-white hover:bg-slate-100 transition-all text-slate-700">
                   <LogIn size={16} /> Masuk ke Akun
                 </Link>
-                <Link href="/login?tab=register" onClick={() => setOpen(false)} className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-bold bg-primary text-white shadow-lg shadow-blue-500/20 hover:scale-[1.02] active:scale-95 transition-all">
+                <Link href="/login?tab=register" onClick={() => setOpen(false)} className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-bold bg-blue-600 text-white shadow-lg shadow-blue-500/20 hover:scale-[1.02] active:scale-95 transition-all">
                   Daftar Sekarang
                 </Link>
               </div>

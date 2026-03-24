@@ -1,20 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { Plus, Edit2, Trash2, ToggleLeft, ToggleRight } from "lucide-react";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { BookOpen, Plus, Search, Trash2, Edit2, X, Save, GraduationCap, Layout, Image as ImageIcon, Loader2, ToggleLeft, ToggleRight, XCircle } from "lucide-react";
 import AnimatedSection from "../../_components/AnimatedSection";
-
-const kursus = [
-  { id: 1, title: "Analisis Struktur Beton Bertulang", category: "Struktur", level: "Menengah", students: 342, modules: 18, status: "Aktif" },
-  { id: 2, title: "Manajemen Konstruksi & Penjadwalan", category: "Manajemen", level: "Lanjutan", students: 218, modules: 12, status: "Aktif" },
-  { id: 3, title: "RAB & Estimasi Biaya Konstruksi", category: "RAB", level: "Dasar", students: 489, modules: 10, status: "Aktif" },
-  { id: 4, title: "Gambar Teknik AutoCAD 2D/3D", category: "Gambar", level: "Dasar", students: 521, modules: 15, status: "Aktif" },
-  { id: 5, title: "Civil 3D Surface & Road Design", category: "Civil 3D", level: "Lanjutan", students: 174, modules: 20, status: "Draft" },
-  { id: 6, title: "Perancangan Jembatan Beton & Baja", category: "Struktur", level: "Lanjutan", students: 156, modules: 24, status: "Aktif" },
-  { id: 7, title: "Teknik Pondasi & Geoteknik", category: "Pondasi", level: "Menengah", students: 203, modules: 12, status: "Aktif" },
-  { id: 8, title: "ETABS – Analisis Gedung Bertingkat", category: "Struktur", level: "Lanjutan", students: 128, modules: 16, status: "Draft" },
-];
+import { supabase, uploadImage } from "@/lib/supabase";
 
 const categoryColors: Record<string, string> = {
   Struktur: "#00897B", Manajemen: "#546E7A", RAB: "#800020",
@@ -22,21 +12,197 @@ const categoryColors: Record<string, string> = {
 };
 
 export default function AdminKursusPage() {
-  const [data, setData] = useState(kursus);
+  const [data, setData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [view, setView] = useState("courses"); // "courses" or "students"
+
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<any>(null);
+  const [modalMode, setModalMode] = useState<"add" | "edit">("add");
+  const [selectedKursus, setSelectedKursus] = useState<any>(null);
+  const [formData, setFormData] = useState({
+    title: "",
+    category: "Struktur",
+    level: "Pemula",
+    instructor: "",
+    price: "",
+    modules_count: "",
+    status: "Draft",
+    image_url: "",
+    description: "",
+    duration: "20 Jam",
+    students_count: "0",
+    tags: "",
+    icon_name: "BookOpen"
+  });
+  const [uploading, setUploading] = useState(false);
+
+  useEffect(() => {
+    fetchKursus();
+  }, []);
+
+  async function fetchKursus() {
+    setLoading(true);
+    try {
+      const { data: kursusData, error } = await supabase
+        .from("kursus")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching kursus:", error.message, error.details);
+        if (error.message?.includes("fetch")) {
+          alert("Gagal menghubungi database! Cek koneksi atau restart server.");
+        }
+      } else {
+        setData(kursusData || []);
+      }
+    } catch (e) {
+      console.error("Fatal fetch error (Kursus):", e);
+    }
+    setLoading(false);
+  }
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const url = await uploadImage(file, "courses");
+      setFormData({ ...formData, image_url: url });
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const openModal = (mode: "add" | "edit", kursus?: any) => {
+    setModalMode(mode);
+    if (mode === "edit" && kursus) {
+      setSelectedKursus(kursus);
+      setFormData({
+        title: kursus.title,
+        category: kursus.category,
+        level: kursus.level || "Pemula",
+        instructor: kursus.instructor || "",
+        price: kursus.price?.toString() || "",
+        modules_count: kursus.modules_count?.toString() || "",
+        status: kursus.status || "Draft",
+        image_url: kursus.image_url || "",
+        description: kursus.description || "",
+        duration: kursus.duration || "20 Jam",
+        students_count: kursus.students_count?.toString() || "0",
+        tags: Array.isArray(kursus.tags) ? kursus.tags.join(", ") : (kursus.tags || ""),
+        icon_name: kursus.icon_name || "BookOpen"
+      });
+    } else {
+      setSelectedKursus(null);
+      setFormData({
+        title: "",
+        category: "Struktur",
+        level: "Pemula",
+        instructor: "",
+        price: "",
+        modules_count: "",
+        status: "Draft",
+        image_url: "",
+        description: "",
+        duration: "20 Jam",
+        students_count: "0",
+        tags: "",
+        icon_name: "BookOpen"
+      });
+    }
+    setIsModalOpen(true);
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const payload = {
+      title: formData.title,
+      category: formData.category,
+      level: formData.level,
+      instructor: formData.instructor,
+      price: parseFloat(formData.price) || 0,
+      modules_count: parseInt(formData.modules_count) || 0,
+      status: formData.status,
+      image_url: formData.image_url,
+      description: formData.description,
+      duration: formData.duration,
+      students_count: parseInt(formData.students_count) || 0,
+      tags: formData.tags.split(",").map(t => t.trim()).filter(t => t !== ""),
+      icon_name: formData.icon_name
+    };
+
+    if (modalMode === "add") {
+      const { error } = await supabase.from("kursus").insert([payload]);
+      if (error) {
+        alert("Error saving kursus: " + error.message);
+      } else {
+        setIsModalOpen(false);
+        fetchKursus();
+      }
+    } else {
+      const { error } = await supabase.from("kursus").update(payload).eq("id", selectedKursus.id);
+      if (error) {
+        alert("Error updating kursus: " + error.message);
+      } else {
+        setIsModalOpen(false);
+        fetchKursus();
+      }
+    }
+  };
+
+  const handleDeleteClick = (kursus: any) => {
+    setItemToDelete(kursus);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!itemToDelete) return;
+    const { error } = await supabase.from("kursus").delete().eq("id", itemToDelete.id);
+    if (error) {
+      alert("Error deleting kursus: " + error.message);
+    } else {
+      setData((prev) => prev.filter((k) => k.id !== itemToDelete.id));
+      setIsDeleteModalOpen(false);
+      setItemToDelete(null);
+    }
+  };
+
+  const deleteKursus = async (id: string) => {
+    // legacy, using handleDeleteClick
+    if (!confirm("Hapus kursus ini secara permanen?")) return;
+    const { error } = await supabase.from("kursus").delete().eq("id", id);
+    if (error) {
+      alert("Error deleting kursus: " + error.message);
+    } else {
+      setData((prev) => prev.filter((k) => k.id !== id));
+    }
+  };
+
+  const toggleStatus = async (id: string, currentStatus: string) => {
+    const newStatus = currentStatus === "Aktif" ? "Draft" : "Aktif";
+    const { error } = await supabase
+      .from("kursus")
+      .update({ status: newStatus })
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error updating status:", error);
+    } else {
+      setData((prev) => prev.map((k) => k.id === id ? { ...k, status: newStatus } : k));
+    }
+  };
 
   const filtered = data.filter((k) => k.title.toLowerCase().includes(search.toLowerCase()));
 
-  const toggleStatus = (id: number) => {
-    setData((d) => d.map((k) => k.id === id
-      ? { ...k, status: k.status === "Aktif" ? "Draft" : "Aktif" }
-      : k
-    ));
-  };
-
-  const [view, setView] = useState("courses"); // "courses" or "students"
-
-  const students = [
+  const mockStudents = [
     { id: 1, name: "Ahmad Fauzi", course: "Analisis Struktur Beton", progress: "45%", date: "23 Mar 2026", status: "Aktif" },
     { id: 2, name: "Siska Putri", course: "RAB & Estimasi Biaya", progress: "100%", date: "22 Mar 2026", status: "Selesai" },
     { id: 3, name: "Bambang W.", course: "Gambar Teknik AutoCAD", progress: "12%", date: "21 Mar 2026", status: "Aktif" },
@@ -50,20 +216,24 @@ export default function AdminKursusPage() {
           <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#1C2433" }}>Manajemen Kursus Online</h1>
           <p className="text-sm" style={{ color: "var(--text-light)" }}>Kelola kurikulum dan pantau progres siswa secara real-time.</p>
         </div>
-        <div className="flex bg-slate-100/50 p-1 rounded-xl border border-slate-200/60 relative">
+        <div className="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200 relative shadow-inner">
            <button onClick={() => setView("courses")} 
-             className={`relative z-10 px-6 py-2 rounded-lg text-xs font-bold transition-all duration-300 ${view === "courses" ? "text-white" : "text-slate-500 hover:text-slate-700"}`}>
+             className={`relative z-10 px-6 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 ${view === "courses" ? "text-white" : "text-slate-500 hover:text-slate-700"}`}>
              {view === "courses" && (
-                <motion.div layoutId="activeTab" className="absolute inset-0 bg-primary rounded-lg shadow-md shadow-blue-500/20" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />
+                <motion.div layoutId="activeTabKursus" className="absolute inset-0 bg-slate-900 rounded-xl shadow-lg shadow-slate-900/20" transition={{ type: "spring", bounce: 0.15, duration: 0.5 }} />
              )}
-             <span className="relative z-10">Manajemen Konten</span>
+             <span className="relative z-10 flex items-center gap-2">
+                <BookOpen size={14} /> Manajemen Konten
+             </span>
            </button>
            <button onClick={() => setView("students")}
-             className={`relative z-10 px-6 py-2 rounded-lg text-xs font-bold transition-all duration-300 ${view === "students" ? "text-white" : "text-slate-500 hover:text-slate-700"}`}>
+             className={`relative z-10 px-6 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 ${view === "students" ? "text-white" : "text-slate-500 hover:text-slate-700"}`}>
              {view === "students" && (
-                <motion.div layoutId="activeTab" className="absolute inset-0 bg-primary rounded-lg shadow-md shadow-blue-500/20" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />
+                <motion.div layoutId="activeTabKursus" className="absolute inset-0 bg-slate-900 rounded-xl shadow-lg shadow-slate-900/20" transition={{ type: "spring", bounce: 0.15, duration: 0.5 }} />
              )}
-             <span className="relative z-10">Data Siswa</span>
+             <span className="relative z-10 flex items-center gap-2">
+                <GraduationCap size={14} /> Data Siswa
+             </span>
            </button>
         </div>
       </div>
@@ -71,7 +241,7 @@ export default function AdminKursusPage() {
       {/* Summary */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         {[
-          { label: "Total Kursus", val: kursus.length, color: "var(--primary)" },
+          { label: "Total Kursus", val: data.length, color: "var(--primary)" },
           { label: "Siswa Aktif", val: "1,248", color: "#475569" },
           { label: "Penyelesaian", val: "84%", color: "#00897B" },
           { label: "Baru Hari Ini", val: "+12", color: "#3B82F6" },
@@ -86,11 +256,11 @@ export default function AdminKursusPage() {
       <AnimatedSection>
         {view === "courses" ? (
           <div className="card overflow-hidden border-none shadow-sm">
-            <div className="p-4 border-b flex items-center justify-between bg-white">
-              <input type="text" placeholder="Cari judul kursus..." className="text-sm outline-none w-64 p-2 bg-slate-50 rounded-lg"
+            <div className="p-4 border-b flex items-center justify-between bg-white overflow-x-auto gap-4">
+              <input type="text" placeholder="Cari judul kursus..." className="text-sm outline-none w-64 p-2 bg-slate-50 rounded-lg flex-shrink-0"
                 value={search} onChange={(e) => setSearch(e.target.value)}
               />
-              <button className="flex items-center gap-2 px-3 py-2 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-black transition-all">
+              <button onClick={() => openModal("add")} className="flex items-center gap-2 px-3 py-2 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-black transition-all whitespace-nowrap">
                 <Plus size={14} /> Tambah Kursus
               </button>
             </div>
@@ -98,32 +268,56 @@ export default function AdminKursusPage() {
               <table className="w-full text-xs">
                 <thead>
                   <tr className="bg-slate-50 text-slate-500 uppercase tracking-wider font-bold">
-                    {["#", "Judul Kursus", "Kategori", "Level", "Siswa", "Status", "Aksi"].map((h) => (
+                    {["Kursus", "Instruktur", "Level", "Status", "Harga", "Aksi"].map((h) => (
                       <th key={h} className="px-5 py-4 text-left">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white">
-                  {filtered.map((k) => (
+                  {loading ? (
+                    Array(3).fill(0).map((_, i) => (
+                      <tr key={i} className="animate-pulse">
+                        <td colSpan={6} className="px-5 py-4 h-16 bg-slate-50/50"></td>
+                      </tr>
+                    ))
+                  ) : filtered.map((k) => (
                     <tr key={k.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-5 py-4 text-slate-400 font-medium">{k.id}</td>
-                      <td className="px-5 py-4 font-bold text-slate-700">{k.title}</td>
                       <td className="px-5 py-4">
-                        <span className="px-2 py-1 rounded bg-blue-50 text-blue-600 font-bold text-[10px] uppercase">{k.category}</span>
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-lg bg-slate-100 flex-shrink-0 overflow-hidden border border-slate-200/50">
+                            {k.image_url ? (
+                              <img src={k.image_url} alt={k.title} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-slate-300">
+                                <Plus size={16} />
+                              </div>
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-700">{k.title}</p>
+                            <p className="text-[10px] text-slate-400 capitalize">{k.category}</p>
+                          </div>
+                        </div>
                       </td>
-                      <td className="px-5 py-4 text-slate-500">{k.level}</td>
-                      <td className="px-5 py-4 font-bold">{k.students.toLocaleString("id")}</td>
+                      <td className="px-5 py-4">
+                        <p className="font-medium text-slate-600">{k.instructor}</p>
+                      </td>
+                      <td className="px-5 py-4 font-medium text-slate-500">{k.level}</td>
                       <td className="px-5 py-4">
                         <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${k.status === "Aktif" ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500"}`}>
                           {k.status}
                         </span>
                       </td>
+                      <td className="px-5 py-4 font-bold">Rp{(k.price || 0).toLocaleString("id")}</td>
                       <td className="px-5 py-4 text-right">
                         <div className="flex items-center gap-2 justify-end">
-                          <button className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-slate-100 text-slate-700 font-bold hover:bg-slate-200 transition-all text-[10px] uppercase">
+                          <button onClick={() => openModal("edit", k)} className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-slate-100 text-slate-700 font-bold hover:bg-slate-200 transition-all text-[10px] uppercase">
                             <Edit2 size={12} /> Edit
                           </button>
-                          <button onClick={() => toggleStatus(k.id)} className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-blue-50 text-blue-700 font-bold transition-all text-[10px] uppercase">
+                           <button onClick={() => handleDeleteClick(k)} className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-red-50 text-red-600 font-bold hover:bg-red-100 transition-all text-[10px] uppercase">
+                            <Trash2 size={12} />
+                          </button>
+                          <button onClick={() => toggleStatus(k.id, k.status)} className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-blue-50 text-blue-700 font-bold transition-all text-[10px] uppercase">
                             {k.status === "Aktif" ? <ToggleRight size={14} /> : <ToggleLeft size={14} />} Status
                           </button>
                         </div>
@@ -136,9 +330,9 @@ export default function AdminKursusPage() {
           </div>
         ) : (
           <div className="card overflow-hidden border-none shadow-sm">
-            <div className="p-5 border-b bg-white flex items-center justify-between">
-              <h3 className="font-bold text-slate-800">Siswa Terdaftar</h3>
-              <span className="text-xs text-slate-400">Menampilkan {students.length} pendaftaran terbaru</span>
+            <div className="p-5 border-b bg-white flex items-center justify-between overflow-x-auto gap-4">
+              <h3 className="font-bold text-slate-800 whitespace-nowrap">Siswa Terdaftar</h3>
+              <span className="text-xs text-slate-400 whitespace-nowrap">Menampilkan {mockStudents.length} pendaftaran terbaru</span>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
@@ -150,7 +344,7 @@ export default function AdminKursusPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white">
-                  {students.map((s) => (
+                  {mockStudents.map((s) => (
                     <tr key={s.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-5 py-4">
                         <p className="font-bold text-slate-700">{s.name}</p>
@@ -159,7 +353,7 @@ export default function AdminKursusPage() {
                       <td className="px-5 py-4 w-48">
                         <div className="flex items-center gap-2">
                           <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-primary" style={{ width: s.progress }} />
+                            <div className="h-full bg-blue-600" style={{ width: s.progress }} />
                           </div>
                           <span className="font-bold">{s.progress}</span>
                         </div>
@@ -176,6 +370,250 @@ export default function AdminKursusPage() {
           </div>
         )}
       </AnimatedSection>
+
+      {/* Kursus Modal */}
+      <AnimatePresence>
+        {isModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col"
+              style={{ maxHeight: "90vh" }}
+            >
+              <div className="p-6 border-b flex items-center justify-between flex-shrink-0 bg-white z-10">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                    {modalMode === "add" ? "Tambah Kursus Baru" : "Edit Kursus"}
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-1">Lengkapi informasi kurikulum dan detail kursus online.</p>
+                </div>
+                <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors font-bold">
+                  <X size={20} className="text-slate-400" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6">
+                  {/* Left Column: Essential Info */}
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-blue-600 mb-4 pb-2 border-b border-blue-50">Informasi Dasar</h3>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1.5 ml-1">Judul Kursus</label>
+                          <input 
+                            type="text" required
+                            placeholder="Contoh: Analisis Struktur Beton Lanjutan"
+                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl outline-none focus:border-primary text-sm transition-all focus:bg-white focus:shadow-sm font-bold"
+                            value={formData.title}
+                            onChange={(e) => setFormData({...formData, title: e.target.value})}
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1.5 ml-1">Kategori</label>
+                            <select 
+                              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl outline-none focus:border-primary text-sm appearance-none focus:bg-white"
+                              value={formData.category}
+                              onChange={(e) => setFormData({...formData, category: e.target.value})}
+                            >
+                              {Object.keys(categoryColors).map(cat => (
+                                <option key={cat} value={cat}>{cat}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1.5 ml-1">Level</label>
+                            <select 
+                              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl outline-none focus:border-primary text-sm appearance-none focus:bg-white"
+                              value={formData.level}
+                              onChange={(e) => setFormData({...formData, level: e.target.value})}
+                            >
+                              <option value="Pemula">Pemula</option>
+                              <option value="Menengah">Menengah</option>
+                              <option value="Lanjutan">Lanjutan</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1.5 ml-1">Harga (Rp)</label>
+                            <input 
+                              type="number" required
+                              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl outline-none focus:border-primary text-sm font-bold focus:bg-white"
+                              value={formData.price}
+                              onChange={(e) => setFormData({...formData, price: e.target.value})}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1.5 ml-1">Jumlah Modul</label>
+                            <input 
+                              type="number" required
+                              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl outline-none focus:border-primary text-sm focus:bg-white"
+                              value={formData.modules_count}
+                              onChange={(e) => setFormData({...formData, modules_count: e.target.value})}
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1.5 ml-1">Instruktur</label>
+                          <input 
+                            type="text" required
+                            placeholder="Nama Pengajar"
+                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl outline-none focus:border-primary text-sm focus:bg-white"
+                            value={formData.instructor}
+                            onChange={(e) => setFormData({...formData, instructor: e.target.value})}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1.5 ml-1">Deskripsi Kursus</label>
+                          <textarea 
+                            rows={4} required
+                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl outline-none focus:border-primary text-sm transition-all resize-none focus:bg-white"
+                            value={formData.description}
+                            onChange={(e) => setFormData({...formData, description: e.target.value})}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right Column: Settings & Assets */}
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-blue-600 mb-4 pb-2 border-b border-blue-50">Visual & Pengaturan</h3>
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1.5 ml-1">Ikon Kursus</label>
+                            <select 
+                              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl outline-none focus:border-primary text-sm appearance-none focus:bg-white"
+                              value={formData.icon_name}
+                              onChange={(e) => setFormData({...formData, icon_name: e.target.value})}
+                            >
+                              <option value="BookOpen">Buku (General)</option>
+                              <option value="Building2">Gedung (Struktur)</option>
+                              <option value="HardHat">Helm (Manajemen)</option>
+                              <option value="Calculator">Kalkulator (RAB)</option>
+                              <option value="Cpu">CPU (Civil 3D)</option>
+                              <option value="Ruler">Penggaris (Gambar)</option>
+                              <option value="Layers">Lapisan (Geoteknik)</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1.5 ml-1">Durasi</label>
+                            <input 
+                              type="text"
+                              placeholder="24 Jam"
+                              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl outline-none focus:border-primary text-sm focus:bg-white"
+                              value={formData.duration}
+                              onChange={(e) => setFormData({...formData, duration: e.target.value})}
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1.5 ml-1">Jumlah Siswa</label>
+                            <input type="number" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm outline-none focus:border-primary focus:bg-white" value={formData.students_count} onChange={(e) => setFormData({...formData, students_count: e.target.value})} />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1.5 ml-1">Status</label>
+                            <select 
+                              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl outline-none focus:border-primary text-sm appearance-none focus:bg-white"
+                              value={formData.status}
+                              onChange={(e) => setFormData({...formData, status: e.target.value})}
+                            >
+                              <option value="Draft">Draft</option>
+                              <option value="Aktif">Aktif</option>
+                              <option value="Arsip">Arsip</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1.5 ml-1">Tags (Pisahkan dengan koma)</label>
+                          <input 
+                            type="text"
+                            placeholder="SAP2000, Structure, Design"
+                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl outline-none focus:border-primary text-sm focus:bg-white"
+                            value={formData.tags}
+                            onChange={(e) => setFormData({...formData, tags: e.target.value})}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1.5 ml-1">Thumbnail Kursus</label>
+                          <div className="flex gap-4 items-center p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                            <div className="w-20 h-20 rounded-xl bg-white border border-slate-200 flex items-center justify-center overflow-hidden flex-shrink-0 shadow-inner">
+                              {formData.image_url ? (
+                                <img src={formData.image_url} alt="Preview" className="w-full h-full object-cover" />
+                              ) : uploading ? (
+                                <Loader2 className="animate-spin text-blue-600" size={24} />
+                              ) : (
+                                <ImageIcon className="text-slate-300" size={30} />
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <input type="file" accept="image/*" className="hidden" id="course-image" onChange={handleImageUpload} disabled={uploading} />
+                              <label htmlFor="course-image" className="inline-block px-4 py-2 bg-white border border-slate-200 rounded-lg text-[10px] font-bold uppercase cursor-pointer hover:bg-slate-100 transition-all text-slate-600 shadow-sm">
+                                {uploading ? "Mengunggah..." : "Ganti Gambar"}
+                              </label>
+                              <p className="text-[10px] text-slate-400 mt-1.5 ml-1 leading-tight">Gunakan rasio 16:9 untuk hasil terbaik (PNG/JPG up to 2MB)</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </form>
+
+              <div className="p-6 border-t bg-slate-50 flex gap-4 justify-end flex-shrink-0">
+                <button 
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-6 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-100 transition-all uppercase tracking-wider"
+                >
+                  Batal
+                </button>
+                <button 
+                  type="button"
+                  onClick={handleSave}
+                  className="px-8 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-black transition-all uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-slate-200"
+                >
+                  <Save size={16} /> Simpan Kursus
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {isDeleteModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden p-8 text-center"
+            >
+              <div className="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                <XCircle size={40} />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-2" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Apakah Anda yakin?</h3>
+              <p className="text-sm text-slate-500 mb-8">Kursus <strong className="text-slate-900">"{itemToDelete?.title}"</strong> akan dihapus secara permanen dari database.</p>
+              <div className="flex gap-4">
+                <button onClick={() => setIsDeleteModalOpen(false)} className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-200 transition-all uppercase tracking-wider">
+                  Batal
+                </button>
+                <button onClick={confirmDelete} className="flex-1 py-3 bg-red-600 text-white rounded-xl text-xs font-bold hover:bg-red-700 transition-all uppercase tracking-wider shadow-lg shadow-red-200">
+                  Hapus
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -27,11 +27,11 @@
   --green: #16A34A;
   --danger: #DC2626;
 
-  /* Shadows */
-  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.08);
-  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
-  --shadow-lg: 0 8px 24px rgba(15, 23, 42, 0.10);
-  --shadow-blue: 0 4px 20px rgba(26, 86, 219, 0.20);
+  /* Shadows - Softer and more elegant */
+  --shadow-sm: 0 4px 6px -1px rgba(15, 23, 42, 0.05), 0 2px 4px -2px rgba(15, 23, 42, 0.03);
+  --shadow-md: 0 10px 15px -3px rgba(15, 23, 42, 0.04), 0 4px 6px -4px rgba(15, 23, 42, 0.02);
+  --shadow-lg: 0 20px 25px -5px rgba(15, 23, 42, 0.05), 0 8px 10px -6px rgba(15, 23, 42, 0.02);
+  --shadow-blue: 0 10px 25px -3px rgba(26, 86, 219, 0.12);
 }
 
 /* ── Reset ── */
@@ -59,17 +59,13 @@ h1, h2, h3, h4, .font-heading {
   padding: 0 1.5rem;
 }
 
-/* ── Backgrounds ── */
+/* ── Backgrounds (Solid Colors, No Gradients) ── */
 .blueprint-bg {
   background-color: var(--bg-subtle);
-  background-image: radial-gradient(var(--border) 1.5px, transparent 1.5px);
-  background-size: 28px 28px;
 }
 
 .blue-dot-bg {
   background-color: var(--bg-blue);
-  background-image: radial-gradient(var(--border-blue) 1px, transparent 1px);
-  background-size: 24px 24px;
 }
 
 /* ── Glass nav ── */
@@ -83,22 +79,22 @@ h1, h2, h3, h4, .font-heading {
 /* ── Cards ── */
 .card {
   background: white;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  border: 1px solid rgba(15, 23, 42, 0.04);
+  border-radius: 10px;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s ease;
   box-shadow: var(--shadow-sm);
 }
 
 .card:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-blue);
-  border-color: var(--border-blue);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+  border-color: rgba(26, 86, 219, 0.15);
 }
 
 .card-blue {
   background: var(--blue-50);
-  border: 1px solid var(--border-blue);
-  border-radius: 12px;
+  border: 1px solid rgba(26, 86, 219, 0.1);
+  border-radius: 10px;
 }
 
 /* ── Buttons ── */
@@ -111,19 +107,22 @@ h1, h2, h3, h4, .font-heading {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  transition: background 0.2s ease, transform 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   border: none;
   cursor: pointer;
   font-size: 0.9rem;
+  box-shadow: 0 1px 2px rgba(26, 86, 219, 0.1);
 }
 
 .btn-primary:hover {
   background: var(--primary-dark);
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(26, 86, 219, 0.2);
 }
 
 .btn-primary:active {
   transform: translateY(0);
+  box-shadow: none;
 }
 
 .btn-secondary {
@@ -135,9 +134,10 @@ h1, h2, h3, h4, .font-heading {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  transition: all 0.2s ease;
-  border: 1px solid var(--border);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(15, 23, 42, 0.08);
   cursor: pointer;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.02);
 }
 
 .btn-secondary:hover {

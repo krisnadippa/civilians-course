@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
@@ -8,13 +8,7 @@ import {
   Calendar, CheckCircle2, Clock, UserCheck, AlertCircle, Wrench
 } from "lucide-react";
 import AnimatedSection from "../_components/AnimatedSection";
-
-const kpiCards = [
-  { label: "Total Pengguna", value: "2,418", change: "+12.4%", up: true, icon: Users, color: "var(--primary)" },
-  { label: "Kursus Aktif", value: "48", change: "+3", up: true, icon: BookOpen, color: "#475569" },
-  { label: "Booking Mentor", value: "87", change: "+23.1%", up: true, icon: Calendar, color: "#3B82F6" },
-  { label: "Permintaan Jasa", value: "12", change: "+5", up: true, icon: Wrench, color: "#1E293B" },
-];
+import { supabase } from "@/lib/supabase";
 
 const recentOrders = [
   { id: "#ORD-2401", user: "Ahmad Fauzi", item: "Template RAB Perumahan", status: "Selesai", amount: "145.000", date: "19 Mar 2026" },
@@ -91,8 +85,6 @@ function BookingChart() {
   );
 }
 
-
-
 const statusColors: Record<string, string> = {
   "Selesai": "#00897B",
   "Diproses": "#1A56DB",
@@ -103,6 +95,70 @@ const statusColors: Record<string, string> = {
 };
 
 export default function AdminDashboard() {
+  const [stats, setStats] = useState({
+    users: 0,
+    kursus: 0,
+    mentors: 0,
+    jasa: 0,
+    products: 0
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const isConfigured = 
+    process.env.NEXT_PUBLIC_SUPABASE_URL && 
+    !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("placeholder");
+
+  async function fetchStats() {
+    if (!isConfigured) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    try {
+      // Helper to fetch count for a table
+      const getCount = async (table: string) => {
+        const { count, error } = await supabase
+          .from(table)
+          .select("*", { count: 'exact', head: true });
+        
+        if (error) {
+          console.error(`Error fetching count for ${table}:`, error);
+          return 0;
+        }
+        return count || 0;
+      };
+
+      const [kCount, jCount, mCount, pCount] = await Promise.all([
+        getCount("kursus"),
+        getCount("jasa"),
+        getCount("mentors"),
+        getCount("products")
+      ]);
+
+      setStats({
+        users: 2418, // Mock for now
+        kursus: kCount,
+        jasa: jCount,
+        mentors: mCount,
+        products: pCount
+      });
+    } catch (error) {
+      console.error("Fatal dashboard fetch error:", error);
+    }
+    setLoading(false);
+  }
+
+  const kpiCards = [
+    { label: "Total Pengguna", value: stats.users.toLocaleString("id"), change: "+12.4%", up: true, icon: Users, color: "var(--primary)" },
+    { label: "Kursus Aktif", value: stats.kursus, change: "+3", up: true, icon: BookOpen, color: "#475569" },
+    { label: "Mentor", value: stats.mentors, change: "+1", up: true, icon: Calendar, color: "#3B82F6" },
+    { label: "Permintaan Jasa", value: stats.jasa, change: "+5", up: true, icon: Wrench, color: "#1E293B" },
+  ];
+
   return (
     <div>
       {/* Header */}
@@ -114,9 +170,29 @@ export default function AdminDashboard() {
           <p className="text-sm" style={{ color: "var(--text-light)" }}>Data real-time ekosistem Civilians</p>
         </div>
         <div className="flex gap-2">
-          <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-widest">Sistem Aktif</span>
+          {!isConfigured ? (
+            <span className="px-3 py-1 rounded-full bg-red-50 text-red-600 text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5">
+              <AlertCircle size={12} /> Konfigurasi Belum Terdeteksi
+            </span>
+          ) : (
+            <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-widest">Sistem Aktif</span>
+          )}
         </div>
       </div>
+
+      {!isConfigured && (
+        <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-3">
+          <AlertCircle className="text-amber-600 flex-shrink-0 mt-0.5" size={18} />
+          <div>
+            <p className="text-sm font-bold text-amber-800">Koneksi Supabase Belum Siap</p>
+            <p className="text-xs text-amber-700 mt-1 leading-relaxed">
+              Environment variables di <code className="bg-amber-100 px-1 rounded">.env.local</code> belum terbaca oleh browser. 
+              Mohon <strong>matikan server (Ctrl+C)</strong> lalu jalankan kembali dengan <strong>npm run dev</strong>.
+              Pastikan tidak ada logo "placeholder" di file <code className="bg-amber-100 px-1 rounded">lib/supabase.ts</code>.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -136,7 +212,7 @@ export default function AdminDashboard() {
               </div>
               <p className="text-2xl font-extrabold mb-0.5"
                 style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#1C2433" }}>
-                {kpi.value}
+                {loading ? "..." : kpi.value}
               </p>
               <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--text-light)" }}>{kpi.label}</p>
             </div>

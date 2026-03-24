@@ -31,6 +31,11 @@ import {
 import Navbar from "./_components/Navbar";
 import Footer from "./_components/Footer";
 import AnimatedSection from "./_components/AnimatedSection";
+import { supabase } from "@/lib/supabase";
+
+const iconMap: Record<string, any> = {
+  FileSpreadsheet, Ruler, Cpu, Building2, BookOpen, HardHat, Layers, ShoppingCart, Users, Award, TrendingUp, CheckCircle2
+};
 
 /* ── DATA ── */
 const stats = [
@@ -67,51 +72,35 @@ const services = [
   },
 ];
 
-const mentors = [
-  {
-    id: 1, avatar: "BS", name: "Budi Santoso",
-    title: "Pakar Analisis Struktur",
-    expertise: ["SAP2000", "ETABS", "Beton Bertulang"],
-    rating: 4.9, sessions: 312, price: 175000,
-  },
-  {
-    id: 2, avatar: "SR", name: "Siti Rahayu",
-    title: "Spesialis RAB & Manajemen Konstruksi",
-    expertise: ["RAB & Estimasi", "MS Project", "Kurva-S"],
-    rating: 4.8, sessions: 245, price: 150000,
-  },
-  {
-    id: 3, avatar: "AP", name: "Andi Prasetyo",
-    title: "Ahli BIM & Gambar Teknik",
-    expertise: ["AutoCAD", "Revit BIM", "Civil 3D"],
-    rating: 4.9, sessions: 198, price: 160000,
-  },
-  {
-    id: 4, avatar: "DK", name: "Dewi Kusuma",
-    title: "Pakar Geoteknik & Pondasi",
-    expertise: ["Plaxis", "Pondasi Dalam", "Geoteknik"],
-    rating: 4.7, sessions: 167, price: 165000,
-  },
+const mentorsInitial: Mentor[] = [
+  { id: 1, avatar: "BS", name: "Loading...", title: "Expert Mentor", expertise: ["Sipil"], rating: 5.0, sessions: 0 }
 ];
 
-const products = [
-  {
-    id: 1, title: "Template RAB Perumahan", category: "RAB",
-    price: 145000, rating: 4.9, downloads: 423, icon: FileSpreadsheet,
-  },
-  {
-    id: 2, title: "Set Gambar CAD Ruko 2 Lantai", category: "Gambar CAD",
-    price: 195000, rating: 4.8, downloads: 289, icon: Ruler,
-  },
-  {
-    id: 3, title: "Model Civil 3D Jalan Lingkungan", category: "Civil 3D",
-    price: 225000, rating: 4.8, downloads: 178, icon: Cpu,
-  },
-  {
-    id: 4, title: "Template RAB Gedung Kantor", category: "RAB",
-    price: 175000, rating: 4.9, downloads: 312, icon: Building2,
-  },
+const productsInitial: Product[] = [
+  { id: 1, title: "Loading...", category: "Generic", price: 0, rating: 5.0, downloads: 0, icon: ShoppingCart }
 ];
+
+/* ── TYPES ── */
+interface Mentor {
+  id: number | string;
+  name: string;
+  title: string;
+  expertise: string[];
+  rating: number;
+  sessions: number;
+  image_url?: string;
+  avatar?: string;
+}
+
+interface Product {
+  id: number | string;
+  title: string;
+  category: string;
+  price: number;
+  rating: number;
+  downloads: number;
+  icon: any;
+}
 
 /* ── Animated Counter ── */
 function Counter({ target, suffix }: { target: number; suffix: string }) {
@@ -134,79 +123,136 @@ function Counter({ target, suffix }: { target: number; suffix: string }) {
 }
 
 export default function HomePage() {
+  const [liveStats, setLiveStats] = useState(stats);
+  const [liveMentors, setLiveMentors] = useState<Mentor[]>([]);
+  const [liveProducts, setLiveProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchHomeData = async () => {
+      setLoading(true);
+      
+      // Fetch Stats
+      const [mCount, pCount, kCount] = await Promise.all([
+        supabase.from("mentors").select("*", { count: "exact", head: true }),
+        supabase.from("products").select("*", { count: "exact", head: true }),
+        supabase.from("kursus").select("*", { count: "exact", head: true })
+      ]);
+
+      setLiveStats([
+        { value: 2400 + (kCount.count || 0), label: "Mahasiswa Aktif", suffix: "+", icon: Users },
+        { value: mCount.count || 4, label: "Mentor Expert", suffix: "", icon: Award },
+        { value: 98, label: "Tingkat Kepuasan", suffix: "%", icon: TrendingUp },
+        { value: 500 + (pCount.count || 0), label: "Proyek Selesai", suffix: "+", icon: CheckCircle2 },
+      ]);
+
+      // Fetch Mentors
+      const { data: mData } = await supabase.from("mentors").select("*").eq("status", "Aktif").limit(4);
+      if (mData) {
+        setLiveMentors(mData.map(m => ({
+          ...m,
+          avatar: m.avatar_initials || m.name.charAt(0),
+          sessions: m.sessions_count || 0,
+          expertise: Array.isArray(m.expertise) ? m.expertise : (m.expertise?.split(",") || [])
+        })));
+      }
+
+      // Fetch Products
+      const { data: pData } = await supabase.from("products").select("*").eq("status", "Tersedia").limit(4);
+      if (pData) {
+        setLiveProducts(pData.map(p => ({
+          ...p,
+          title: p.name,
+          downloads: p.downloads_count || 0,
+          icon: iconMap[p.icon_name] || ShoppingCart
+        })));
+      }
+
+      setLoading(false);
+    };
+    fetchHomeData();
+  }, []);
+
+  const mentors = liveMentors.length > 0 ? liveMentors : (loading ? [] : mentorsInitial);
+  const products = liveProducts.length > 0 ? liveProducts : (loading ? [] : productsInitial);
   return (
     <>
       <Navbar />
 
       <main>
-        {/* ── HERO SECTION ── */}
-        <section className="relative min-h-[85vh] flex items-center overflow-hidden" style={{ background: "var(--primary)" }}>
-          {/* Background image */}
-          <div className="absolute inset-0">
-            <Image
-              src="/hero-building.png"
-              alt="Civil Engineering Building"
-              fill
-              className="object-cover"
-              priority
-              style={{ opacity: 0.18 }}
-            />
-          </div>
+        {/* ── NEW HERO SECTION (Clean & Structural) ── */}
+        <section className="relative pt-32 pb-24 lg:pt-48 lg:pb-32 overflow-hidden bg-white border-b border-slate-100">
+           <div className="container-main relative z-10">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-8 items-center">
+                 {/* Text Content */}
+                 <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="max-w-2xl">
+                    <div className="flex items-center gap-3 mb-6">
+                       <span className="px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-extrabold uppercase tracking-widest rounded-md border border-blue-100">
+                         #1 Platform EdTech Sipil
+                       </span>
+                    </div>
+                    <h1 className="text-slate-900 mb-6 leading-[1.1]" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: "clamp(2.8rem, 5vw, 4.5rem)", fontWeight: 800, letterSpacing: "-0.02em" }}>
+                       Bangun Karir <br />
+                       <span className="text-blue-600">Teknik Sipil</span> Cemerlang
+                    </h1>
+                    <p className="text-lg text-slate-500 mb-8 leading-relaxed max-w-xl">
+                       Akses kursus profesional, konsultasi ahli, dan referensi desain industri. Belajar langsung dari praktisi untuk siap hadapi proyek nyata.
+                    </p>
+                    
+                    <div className="flex flex-wrap items-center gap-4">
+                       <Link href="/kursus" className="px-8 py-4 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 hover:-translate-y-0.5 transition-all shadow-md hover:shadow-lg flex items-center gap-2">
+                          Mulai Belajar <ArrowRight size={18} />
+                       </Link>
+                       <Link href="/mentor" className="px-8 py-4 bg-white text-slate-700 border border-slate-200 rounded-xl font-bold text-sm hover:border-slate-300 hover:bg-slate-50 transition-all flex items-center gap-2 shadow-sm">
+                          Cari Mentor
+                       </Link>
+                    </div>
 
-          {/* Grid overlay */}
-          <div
-            className="absolute inset-0 opacity-10"
-            style={{
-              backgroundImage: "linear-gradient(rgba(255,255,255,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.15) 1px, transparent 1px)",
-              backgroundSize: "60px 60px",
-            }}
-          />
+                    <div className="mt-10 flex items-center gap-6 pt-6 border-t border-slate-100">
+                       <div className="flex flex-col">
+                          <span className="text-2xl font-extrabold text-slate-900 block leading-none mb-1" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>2.4k+</span>
+                          <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">Member Aktif</span>
+                       </div>
+                       <div className="w-[1px] h-10 bg-slate-200" />
+                       <div className="flex flex-col">
+                          <span className="text-2xl font-extrabold text-slate-900 block leading-none mb-1" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>4.9/5</span>
+                          <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">Rating Platfom</span>
+                       </div>
+                    </div>
+                 </motion.div>
 
-          <div className="container-main relative z-10 pt-40 pb-40">
-            <div className="max-w-3xl">
-              <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
-                <div className="flex items-center gap-2 mb-6">
-                  <div className="w-6 h-0.5 bg-white opacity-60" />
-                  <span className="text-xs font-bold tracking-widest uppercase text-white opacity-70">
-                    Platform Teknik Sipil Indonesia
-                  </span>
-                </div>
-                <h1
-                  className="text-white mb-6"
-                  style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: "clamp(2.8rem, 7vw, 5rem)", fontWeight: 800, lineHeight: 1.05, letterSpacing: "-0.03em" }}
-                >
-                  Wujudkan Proyek Struktural Terbaik.
-                </h1>
-                <p className="mb-10 leading-relaxed" style={{ color: "rgba(255,255,255,0.75)", maxWidth: 520, fontSize: "1.1rem" }}>
-                  Jasa perancangan sipil profesional, sesi bimbingan mentor expert, dan template digital siap pakai — semua dalam satu platform.
-                </p>
-                <div className="flex flex-wrap gap-4">
-                  <Link href="/jasa" className="btn-primary" style={{ background: "white", color: "var(--primary)", padding: "13px 28px", fontSize: "0.95rem" }}>
-                    Lihat Layanan <ArrowRight size={18} />
-                  </Link>
-                  <Link href="/mentor" className="btn-outline-blue" style={{ padding: "13px 28px", fontSize: "0.95rem" }}>
-                    Booking Mentor <ChevronRight size={18} />
-                  </Link>
-                </div>
-              </motion.div>
-            </div>
-          </div>
-
-          {/* Bottom wave */}
-          <div className="absolute bottom-0 left-0 right-0 w-full overflow-hidden leading-none pointer-events-none">
-            <svg viewBox="0 0 1440 120" className="w-full h-auto" fill="none" preserveAspectRatio="none">
-              <path d="M0,0 C480,140 960,140 1440,0 L1440,120 L0,120 Z" fill="white" />
-            </svg>
-          </div>
+                 {/* Visual/Image Content */}
+                 <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.7, delay: 0.2 }} className="relative hidden lg:block">
+                    <div className="relative w-full aspect-square max-w-[500px] ml-auto">
+                       {/* Decorative structuring */}
+                       <div className="absolute top-0 right-0 w-3/4 h-full bg-blue-50 rounded-3xl" />
+                       <div className="absolute bottom-10 left-0 w-full h-3/4 bg-slate-100 rounded-3xl border border-slate-200 overflow-hidden shadow-lg">
+                          <Image src="/hero-building.png" alt="Engineering Concept" fill className="object-cover opacity-80 mix-blend-multiply" />
+                       </div>
+                       
+                       {/* Floating Badge */}
+                       <div className="absolute top-1/2 -left-8 bg-white p-4 rounded-2xl shadow-xl border border-slate-100 flex items-center gap-4 animate-[bounce_4s_infinite]">
+                          <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600">
+                             <CheckCircle2 size={24} />
+                          </div>
+                          <div>
+                             <p className="text-sm font-bold text-slate-900">Materi Terverifikasi</p>
+                             <p className="text-xs text-slate-500">Standar SNI & Internasional</p>
+                          </div>
+                       </div>
+                    </div>
+                 </motion.div>
+              </div>
+           </div>
         </section>
 
         {/* ── STATS ── */}
         <section className="py-16" style={{ background: "white" }}>
           <div className="container-main">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {stats.map((s, i) => (
+              {liveStats.map((s, i) => (
                 <AnimatedSection key={s.label} delay={i * 0.1}>
-                  <div className="card p-6 text-center" style={{ borderTop: "3px solid var(--primary)" }}>
+                  <div className="card p-8 flex flex-col items-center justify-center">
                     <div className="icon-box mx-auto mb-3">
                       <s.icon size={20} style={{ color: "var(--primary)" }} />
                     </div>
@@ -304,10 +350,14 @@ export default function HomePage() {
                     {/* Avatar */}
                     <div className="flex items-center gap-3 mb-4">
                       <div
-                        className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-base flex-shrink-0"
-                        style={{ background: "var(--primary)", fontFamily: "'Space Grotesk', sans-serif" }}
+                        className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-base flex-shrink-0 overflow-hidden"
+                        style={{ background: m.image_url ? "transparent" : "var(--primary)", fontFamily: "'Space Grotesk', sans-serif" }}
                       >
-                        {m.avatar}
+                        {m.image_url ? (
+                          <img src={m.image_url} alt={m.name} className="w-full h-full object-cover" />
+                        ) : (
+                          m.avatar
+                        )}
                       </div>
                       <div>
                         <p className="font-bold text-sm leading-tight" style={{ color: "var(--text-primary)", fontFamily: "'Space Grotesk', sans-serif" }}>{m.name}</p>
@@ -317,7 +367,7 @@ export default function HomePage() {
 
                     {/* Tags */}
                     <div className="flex flex-wrap gap-1.5 mb-4 flex-1">
-                      {m.expertise.map((e) => (
+                      {m.expertise.map((e: string) => (
                         <span key={e} className="tag-primary">{e}</span>
                       ))}
                     </div>

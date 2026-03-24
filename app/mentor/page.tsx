@@ -1,647 +1,416 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Star,
-  Users,
-  Clock,
-  Calendar,
-  X,
-  CheckCircle2,
-  BookOpen,
-  ArrowRight,
-  Building2,
-  HardHat,
-  Ruler,
-  Cpu,
+  Star, Users, Clock, Calendar, X, CheckCircle2, BookOpen, ArrowRight,
+  Building2, HardHat, Ruler, Cpu, Sparkles, MessageSquare, Linkedin, ExternalLink
 } from "lucide-react";
 import Navbar from "../_components/Navbar";
 import Footer from "../_components/Footer";
 import AnimatedSection from "../_components/AnimatedSection";
-
-const mentors = [
-  {
-    id: 1,
-    avatar: "BS",
-    color: "var(--primary)",
-    name: "Eka Juniarta",
-    title: "Pakar Analisis & Desain Struktur",
-    bio: "20+ tahun pengalaman di bidang teknik struktur. Terlibat dalam proyek jembatan nasional dan gedung bertingkat tinggi di berbagai kota besar Indonesia.",
-    expertise: [
-      "Analisis Struktur",
-      "SAP2000",
-      "ETABS",
-      "Beton Bertulang",
-      "Baja Struktur",
-      "SNI Gempa",
-    ],
-    rating: 4.9,
-    sessions: 312,
-    price: 175000,
-    available: [
-      "Senin 19:00",
-      "Rabu 19:00",
-      "Sabtu 10:00",
-      "Sabtu 14:00",
-      "Minggu 10:00",
-    ],
-  },
-  {
-    id: 2,
-    avatar: "SR",
-    color: "#1345B5",
-    name: "Ratna Essya",
-    title: "Spesialis Manajemen Konstruksi & RAB",
-    bio: "Praktisi aktif manajemen proyek konstruksi dengan portofolio proyek senilai lebih dari Rp 500 miliar. Ahli penyusunan RAB dan penjadwalan proyek.",
-    expertise: [
-      "Manajemen Konstruksi",
-      "RAB & Estimasi",
-      "MS Project",
-      "Kurva-S",
-      "HSPK",
-      "K3 Proyek",
-    ],
-    rating: 4.8,
-    sessions: 245,
-    price: 150000,
-    available: [
-      "Selasa 18:00",
-      "Kamis 18:00",
-      "Jumat 18:00",
-      "Sabtu 08:00",
-      "Sabtu 13:00",
-    ],
-  },
-  {
-    id: 3,
-    avatar: "AP",
-    color: "#0F2878",
-    name: "Arimantara",
-    title: "Ahli BIM & Gambar Teknik",
-    bio: "Spesialis BIM dan drafting teknik dengan pengalaman di proyek infrastruktur internasional. Certified Autodesk Professional untuk AutoCAD, Revit, dan Civil 3D.",
-    expertise: [
-      "AutoCAD 2D/3D",
-      "Revit BIM",
-      "Civil 3D",
-      "Navisworks",
-      "BIM Coordinator",
-      "Set Gambar Kerja",
-    ],
-    rating: 4.9,
-    sessions: 198,
-    price: 160000,
-    available: [
-      "Senin 20:00",
-      "Rabu 20:00",
-      "Jumat 19:00",
-      "Sabtu 15:00",
-      "Minggu 14:00",
-    ],
-  },
-  {
-    id: 4,
-    avatar: "DK",
-    color: "#1A56DB",
-    name: "Bagaskara",
-    title: "Pakar Geoteknik & Pondasi",
-    bio: "Peneliti dan konsultan geoteknik dengan spesialisasi analisis pondasi, perbaikan tanah, dan analisis stabilitas lereng untuk proyek konstruksi skala besar.",
-    expertise: [
-      "Geoteknik",
-      "Pondasi Dalam",
-      "Analisis Lereng",
-      "Plaxis 2D/3D",
-      "SPT Correlation",
-      "Perbaikan Tanah",
-    ],
-    rating: 4.7,
-    sessions: 167,
-    price: 165000,
-    available: [
-      "Selasa 19:00",
-      "Kamis 19:00",
-      "Sabtu 09:00",
-      "Sabtu 16:00",
-      "Minggu 09:00",
-    ],
-  },
-];
+import { supabase } from "@/lib/supabase";
 
 function BookingModal({
   mentor,
   onClose,
 }: {
-  mentor: (typeof mentors)[0];
+  mentor: any;
   onClose: () => void;
 }) {
-  const [selectedSlot, setSelectedSlot] = useState("");
+  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedTime, setSelectedTime] = useState("");
   const [topic, setTopic] = useState("");
   const [booked, setBooked] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleBook = (e: React.FormEvent) => {
+  // Suggested time slots
+  const timeSlots = ["09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00", "19:00", "20:00"];
+
+  const handleBook = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedSlot) return;
-    setBooked(true);
+    if (!selectedDate || !selectedTime) return;
+    
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase.from("mentor_bookings").insert([
+        {
+          mentor_id: mentor.id,
+          user_name: "User Civilians", // In a real app, this would be the logged-in user
+          topic: topic || "Bimbingan Mentor",
+          booking_date: selectedDate,
+          booking_time: selectedTime,
+          status: "Pending"
+        }
+      ]);
+
+      if (error) throw error;
+      setBooked(true);
+    } catch (err: any) {
+      alert("Gagal membuat booking: " + err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  // Get tomorrow's date for min date
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const minDate = tomorrow.toISOString().split('T')[0];
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: "rgba(15,23,42,0.75)", backdropFilter: "blur(6px)" }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <motion.div
-        initial={{ scale: 0.92, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.92, opacity: 0 }}
-        transition={{ type: "spring", stiffness: 280, damping: 22 }}
-        className="card w-full max-w-lg overflow-hidden"
-        style={{ maxHeight: "90vh", overflowY: "auto" }}
+        initial={{ scale: 0.95, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.95, opacity: 0, y: 20 }}
+        className="bg-white rounded-[32px] w-full max-w-lg overflow-hidden shadow-2xl flex flex-col"
+        style={{ maxHeight: "90vh" }}
       >
-        {/* Header */}
-        <div
-          className="p-5 flex items-start justify-between"
-          style={{ borderBottom: "1px solid var(--border)" }}
-        >
-          <div className="flex items-center gap-3">
-            <div
-              className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold flex-shrink-0"
-              style={{
-                background: mentor.color,
-                fontFamily: "'Space Grotesk', sans-serif",
-              }}
-            >
-              {mentor.avatar}
-            </div>
-            <div>
-              <h3
-                className="font-bold"
-                style={{
-                  fontFamily: "'Space Grotesk', sans-serif",
-                  color: "var(--text-primary)",
-                }}
-              >
-                {mentor.name}
-              </h3>
-              <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
-                {mentor.title}
-              </p>
-            </div>
+        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
+          <div className="flex items-center gap-4">
+             <div className="w-12 h-12 rounded-2xl bg-slate-100 overflow-hidden flex-shrink-0 border border-slate-200">
+               {mentor.image_url ? (
+                 <img src={mentor.image_url} alt={mentor.name} className="w-full h-full object-cover" />
+               ) : (
+                 <div className="w-full h-full flex items-center justify-center bg-blue-600 text-white font-bold">
+                   {mentor.avatar}
+                 </div>
+               )}
+             </div>
+             <div>
+               <h3 className="font-bold text-slate-900 leading-tight">{mentor.name}</h3>
+               <p className="text-xs text-slate-500">{mentor.title}</p>
+             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg transition-colors"
-            style={{ color: "var(--text-light)" }}
-          >
-            <X size={18} />
-          </button>
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors font-bold"><X size={20} className="text-slate-400" /></button>
         </div>
 
-        {booked ? (
-          <div className="p-8 text-center">
-            <div
-              className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
-              style={{ background: "var(--blue-50)" }}
-            >
-              <CheckCircle2 size={32} style={{ color: "var(--primary)" }} />
-            </div>
-            <h3
-              className="font-bold text-lg mb-2"
-              style={{
-                color: "var(--text-primary)",
-                fontFamily: "'Space Grotesk', sans-serif",
-              }}
-            >
-              Booking Berhasil!
-            </h3>
-            <p
-              className="text-sm mb-1"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              Sesi dengan <strong>{mentor.name}</strong>
-            </p>
-            <p
-              className="text-sm mb-4 font-semibold"
-              style={{ color: "var(--primary)" }}
-            >
-              {selectedSlot}
-            </p>
-            <p className="text-xs" style={{ color: "var(--text-light)" }}>
-              Konfirmasi akan dikirim ke email Anda. Mentor akan menghubungi
-              sebelum sesi dimulai.
-            </p>
-            <button onClick={onClose} className="btn-primary mt-6 mx-auto">
-              Tutup
-            </button>
-          </div>
-        ) : (
-          <form onSubmit={handleBook} className="p-5 flex flex-col gap-5">
-            {/* Price Info */}
-            <div
-              className="flex items-center justify-between p-4 rounded-xl"
-              style={{
-                background: "var(--blue-50)",
-                border: "1px solid var(--border-blue)",
-              }}
-            >
-              <div>
-                <p
-                  className="text-xs"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  Biaya per sesi (60 menit)
-                </p>
-                <p
-                  className="font-bold text-lg"
-                  style={{
-                    color: "var(--primary)",
-                    fontFamily: "'Space Grotesk', sans-serif",
-                  }}
-                >
-                  Rp {mentor.price.toLocaleString("id")}
-                </p>
+        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+          {booked ? (
+            <div className="text-center py-10">
+              <div className="w-20 h-20 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+                <CheckCircle2 size={40} />
               </div>
-              <Clock
-                size={22}
-                style={{ color: "var(--primary)", opacity: 0.6 }}
-              />
-            </div>
-
-            {/* Slot Selection */}
-            <div>
-              <label
-                className="block text-sm font-semibold mb-3"
-                style={{ color: "var(--text-primary)" }}
-              >
-                Pilih Waktu Sesi
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                {mentor.available.map((slot) => (
-                  <button
-                    key={slot}
-                    type="button"
-                    onClick={() => setSelectedSlot(slot)}
-                    className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-xs font-medium transition-all border"
-                    style={{
-                      background:
-                        selectedSlot === slot ? "var(--primary)" : "white",
-                      color:
-                        selectedSlot === slot
-                          ? "white"
-                          : "var(--text-secondary)",
-                      borderColor:
-                        selectedSlot === slot
-                          ? "var(--primary)"
-                          : "var(--border)",
-                    }}
-                  >
-                    <Calendar size={12} />
-                    {slot}
-                  </button>
-                ))}
+              <h3 className="text-2xl font-bold text-slate-900 mb-2" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Booking Dikirim!</h3>
+              <p className="text-slate-500 mb-8 max-w-xs mx-auto">Permintaan bimbingan Anda telah masuk ke sistem. Tim kami akan segera mengkonfirmasi via WhatsApp/Email.</p>
+              <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 mb-8 text-left">
+                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Detil Sesi:</p>
+                 <div className="flex items-center gap-3 text-sm font-bold text-slate-700">
+                    <Calendar size={16} className="text-blue-500" /> {selectedDate} pk {selectedTime} WIB
+                 </div>
               </div>
+              <button onClick={onClose} className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold text-sm hover:bg-black transition-all">Tutup</button>
             </div>
+          ) : (
+            <form onSubmit={handleBook} className="space-y-8">
+               <div className="bg-blue-50 p-6 rounded-3xl border border-blue-100 flex items-center justify-between">
+                  <div>
+                    <p className="text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-1">Fee Bimbingan</p>
+                    <p className="text-2xl font-extrabold text-blue-700" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Rp {mentor.price.toLocaleString("id")}</p>
+                    <p className="text-[10px] text-blue-400 font-medium">Durasi 60 Menit / Sesi</p>
+                  </div>
+                  <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600">
+                    <Clock size={24} />
+                  </div>
+               </div>
 
-            {/* Topic */}
-            <div>
-              <label
-                className="block text-sm font-semibold mb-2"
-                style={{ color: "var(--text-primary)" }}
-              >
-                Topik / Pertanyaan{" "}
-                <span style={{ color: "var(--text-light)", fontWeight: 400 }}>
-                  (opsional)
-                </span>
-              </label>
-              <textarea
-                rows={3}
-                placeholder="Contoh: Saya ingin belajar analisis gempa menggunakan SAP2000..."
-                className="w-full text-sm"
-                style={{ resize: "none", color: "var(--text-primary)" }}
-                value={topic}
-                onChange={(e) => setTopic(e.target.value)}
-              />
-            </div>
+               <div className="space-y-6">
+                 <div>
+                   <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">1. Pilih Tanggal</label>
+                   <input 
+                      type="date"
+                      min={minDate}
+                      required
+                      className="w-full p-4 bg-slate-50 rounded-2xl border border-slate-100 outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white text-sm font-bold transition-all"
+                      value={selectedDate}
+                      onChange={(e) => setSelectedDate(e.target.value)}
+                   />
+                 </div>
 
-            <button
-              type="submit"
-              disabled={!selectedSlot}
-              className="btn-booking w-full justify-center"
-            >
-              Konfirmasi Booking <CheckCircle2 size={16} />
-            </button>
-          </form>
-        )}
+                 <div>
+                   <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">2. Pilih Jam Sesi</label>
+                   <div className="grid grid-cols-3 gap-2">
+                     {timeSlots.map((time) => (
+                       <button
+                         key={time}
+                         type="button"
+                         onClick={() => setSelectedTime(time)}
+                         className={`px-3 py-3 rounded-xl text-xs font-bold transition-all border ${
+                           selectedTime === time 
+                             ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-200" 
+                             : "bg-white border-slate-100 text-slate-600 hover:border-slate-300"
+                         }`}
+                       >
+                         {time}
+                       </button>
+                     ))}
+                   </div>
+                 </div>
+
+                 <div>
+                   <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">3. Topik Diskusi (Opsional)</label>
+                   <textarea
+                     rows={3}
+                     placeholder="Sebutkan kendala atau materi yang ingin Anda tanyakan..."
+                     className="w-full p-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-blue-500/20 text-sm font-medium transition-all resize-none"
+                     value={topic}
+                     onChange={(e) => setTopic(e.target.value)}
+                   />
+                 </div>
+               </div>
+
+               <button
+                 type="submit"
+                 disabled={!selectedDate || !selectedTime}
+                 className={`w-full py-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${
+                   !selectedDate || !selectedTime
+                     ? "bg-slate-100 text-slate-400 cursor-not-allowed" 
+                     : "bg-slate-900 text-white hover:bg-black shadow-xl shadow-slate-200"
+                 }`}
+               >
+                 Konfirmasi Booking <ArrowRight size={18} />
+               </button>
+            </form>
+          )}
+        </div>
       </motion.div>
     </motion.div>
   );
 }
 
 export default function MentorPage() {
-  const [activeMentor, setActiveMentor] = useState<(typeof mentors)[0] | null>(
-    null,
-  );
+  const [mentorsData, setMentorsData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeMentor, setActiveMentor] = useState<any | null>(null);
+
+  useEffect(() => {
+    const fetchMentorsData = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from("mentors")
+          .select("*")
+          .neq("status", "Draft") 
+          .order("name", { ascending: true });
+        
+        if (error) throw error;
+
+        if (data) {
+          const mapped = data.map((m: any) => ({
+            ...m,
+            id: m.id,
+            avatar: m.image_url ? null : (m.avatar_initials || m.name.charAt(0)),
+            color: m.color_code || "#3B82F6",
+            name: m.name,
+            title: m.title || "Senior Mentor",
+            bio: m.bio || "Berpengalaman membimbing mahasiswa teknik sipil dalam mengerjakan tugas akhir dan proyek praktis.",
+            expertise: Array.isArray(m.expertise) ? m.expertise : (m.expertise?.split(",") || ["General"]),
+            rating: m.rating || 5.0,
+            sessions: m.sessions_count || 0,
+            price: m.price || 150000,
+            available: Array.isArray(m.available_slots) ? m.available_slots : ["Senin 19:00", "Rabu 19:00"],
+            image_url: m.image_url
+          }));
+          setMentorsData(mapped);
+        }
+      } catch (err) {
+        console.error("Error fetching mentors:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchMentorsData();
+  }, []);
 
   return (
     <>
       <Navbar />
-      <main>
-        {/* Hero */}
-        <section
-          className="pt-48 pb-40 relative overflow-hidden"
-          style={{ background: "var(--primary)" }}
-        >
-          <div
-            className="absolute inset-0 opacity-10"
-            style={{
-              backgroundImage:
-                "linear-gradient(rgba(255,255,255,0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.2) 1px, transparent 1px)",
-              backgroundSize: "48px 48px",
-            }}
-          />
+      <main className="bg-[#F8FAFC]">
+        {/* ── HERO SECTION ── */}
+        {/* ── HERO SECTION ── */}
+        <section className="relative pt-40 pb-24 overflow-hidden bg-white border-b border-slate-100">
           <div className="container-main relative z-10">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7 }}
-            >
-              <div className="flex items-center gap-2 mb-4">
-                <div
-                  className="w-5 h-0.5"
-                  style={{ background: "rgba(255,255,255,0.5)" }}
-                />
-                <span
-                  className="text-xs font-bold tracking-widest uppercase"
-                  style={{ color: "rgba(255,255,255,0.65)" }}
-                >
-                  Tim Pengajar
-                </span>
+            <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="max-w-3xl mx-auto text-center">
+              <div className="flex items-center justify-center gap-2 mb-6">
+                <span className="px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-extrabold tracking-widest uppercase rounded-md border border-blue-100">Expert Mentorship</span>
               </div>
-              <h1
-                className="text-white mb-4"
-                style={{
-                  fontFamily: "'Space Grotesk', sans-serif",
-                  fontSize: "clamp(2.2rem, 5vw, 3.5rem)",
-                  fontWeight: 800,
-                  lineHeight: 1.1,
-                }}
-              >
-                Belajar dari Para Expert
+              
+              <h1 className="text-slate-900 mb-6 leading-[1.1]"
+                style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: "clamp(2.5rem, 6vw, 4.5rem)", fontWeight: 800, letterSpacing: "-0.02em" }}>
+                Pelajari Langsung dari <br/><span className="text-blue-600">Para Praktisi</span>
               </h1>
-              <p
-                style={{
-                  color: "rgba(255,255,255,0.7)",
-                  maxWidth: 500,
-                  fontSize: "1rem",
-                }}
-              >
-                4 mentor senior siap membimbing sesi privat 1-on-1. Booking
-                sesuai jadwal dan kebutuhan Anda.
+              
+              <p className="text-lg mb-10 max-w-2xl mx-auto leading-relaxed text-slate-500">
+                Bimbingan 1-on-1 eksklusif bersama praktisi senior untuk menguasai software teknik, penyusunan RAB, hingga konsultasi Tugas Akhir dengan standar industri.
               </p>
+              
+              <div className="flex flex-wrap items-center justify-center gap-4 mt-6">
+                <div className="flex items-center gap-3 px-6 py-4 bg-slate-50 border border-slate-200 rounded-xl">
+                   <CheckCircle2 className="text-blue-600" size={20} />
+                   <p className="text-sm font-bold text-slate-700 tracking-wide">Sesi Privat 60 Menit</p>
+                </div>
+                <div className="flex items-center gap-3 px-6 py-4 bg-slate-50 border border-slate-200 rounded-xl">
+                   <MessageSquare className="text-blue-600" size={20} />
+                   <p className="text-sm font-bold text-slate-700 tracking-wide">Q&A Tak Terbatas</p>
+                </div>
+              </div>
             </motion.div>
           </div>
-          <div className="absolute bottom-0 left-0 right-0 w-full overflow-hidden leading-none pointer-events-none">
-            <svg
-              viewBox="0 0 1440 120"
-              className="w-full h-auto"
-              fill="none"
-              preserveAspectRatio="none"
-            >
-              <path
-                d="M0,0 C480,140 960,140 1440,0 L1440,120 L0,120 Z"
-                fill="white"
-              />
-            </svg>
-          </div>
         </section>
 
-        {/* Mentors Grid */}
-        <section className="py-20" style={{ background: "white" }}>
+        {/* Mentors Section */}
+        <section className="py-24 px-6">
           <div className="container-main">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {mentors.map((m, i) => (
-                <AnimatedSection key={m.id} delay={i * 0.1}>
-                  <div className="card p-6 h-full flex flex-col">
-                    <div className="flex items-start gap-4 mb-5">
-                      <div
-                        className="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-xl font-bold flex-shrink-0"
-                        style={{
-                          background: m.color,
-                          fontFamily: "'Space Grotesk', sans-serif",
-                        }}
-                      >
-                        {m.avatar}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3
-                          className="font-bold text-lg leading-tight mb-1"
-                          style={{
-                            fontFamily: "'Space Grotesk', sans-serif",
-                            color: "var(--text-primary)",
-                          }}
-                        >
-                          {m.name}
-                        </h3>
-                        <p
-                          className="text-sm"
-                          style={{ color: "var(--text-secondary)" }}
-                        >
-                          {m.title}
-                        </p>
-                        <div className="flex items-center gap-3 mt-2">
-                          <div className="flex items-center gap-1">
-                            <Star
-                              size={13}
-                              fill="var(--primary)"
-                              style={{ color: "var(--primary)" }}
-                            />
-                            <span
-                              className="text-sm font-bold"
-                              style={{ color: "var(--text-primary)" }}
-                            >
-                              {m.rating}
-                            </span>
-                          </div>
-                          <span
-                            className="text-xs"
-                            style={{ color: "var(--text-light)" }}
-                          >
-                            {m.sessions} sesi selesai
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <p
-                      className="text-sm leading-relaxed mb-5"
-                      style={{ color: "var(--text-secondary)" }}
-                    >
-                      {m.bio}
-                    </p>
-
-                    <div className="flex-1">
-                      {/* Expertise */}
-                      <div className="mb-5">
-                        <p
-                          className="text-xs font-bold uppercase tracking-wider mb-2"
-                          style={{ color: "var(--text-light)" }}
-                        >
-                          Keahlian
-                        </p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {m.expertise.map((e) => (
-                            <span key={e} className="tag-primary">
-                              {e}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Available Slots */}
-                      <div className="mb-5">
-                        <p
-                          className="text-xs font-bold uppercase tracking-wider mb-2"
-                          style={{ color: "var(--text-light)" }}
-                        >
-                          Jadwal Tersedia
-                        </p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {m.available.slice(0, 3).map((slot) => (
-                            <span
-                              key={slot}
-                              className="flex items-center gap-1 px-2 py-1 rounded-md text-xs"
-                              style={{
-                                background: "var(--blue-50)",
-                                color: "var(--primary)",
-                                border: "1px solid var(--border-blue)",
-                              }}
-                            >
-                              <Calendar size={10} />
-                              {slot}
-                            </span>
-                          ))}
-                          {m.available.length > 3 && (
-                            <span
-                              className="px-2 py-1 rounded-md text-xs"
-                              style={{
-                                background: "var(--bg-subtle)",
-                                color: "var(--text-light)",
-                              }}
-                            >
-                              +{m.available.length - 3} lainnya
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div
-                      className="flex items-center justify-between pt-4 mt-auto"
-                      style={{ borderTop: "1px solid var(--border)" }}
-                    >
-                      <div>
-                        <p
-                          className="text-xs"
-                          style={{ color: "var(--text-light)" }}
-                        >
-                          Harga per sesi
-                        </p>
-                        <p
-                          className="font-bold text-base"
-                          style={{
-                            fontFamily: "'Space Grotesk', sans-serif",
-                            color: "var(--text-primary)",
-                          }}
-                        >
-                          Rp {m.price.toLocaleString("id")}
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => setActiveMentor(m)}
-                        className="btn-booking"
-                      >
-                        Booking Sesi <ArrowRight size={14} />
-                      </button>
-                    </div>
+            <div className="flex items-center justify-between mb-16">
+               <div>
+                  <h2 className="text-3xl font-bold text-slate-900 mb-2" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Pilih Mentor Anda</h2>
+                  <p className="text-slate-500">Menghubungkan Anda dengan expertise terbaik di bidang perancangan dan sipil.</p>
+               </div>
+               <div className="hidden md:flex gap-2">
+                  <div className="px-4 py-2 bg-white border border-slate-100 rounded-xl text-xs font-bold text-slate-600 shadow-sm">
+                    {mentorsData.length} Mentor Aktif
                   </div>
-                </AnimatedSection>
-              ))}
+               </div>
             </div>
-          </div>
-        </section>
 
-        {/* How It Works */}
-        <section className="py-28" style={{ background: "white" }}>
-          <div className="container-main">
-            <AnimatedSection>
-              <div className="text-center mb-12">
-                <span className="section-label">Cara Kerja</span>
-                <div className="divider-blue mx-auto" />
-                <h2 className="section-title">Booking dalam 3 Langkah</h2>
+            {loading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {[1,2,3,4].map(i => (
+                  <div key={i} className="bg-white rounded-2xl p-10 h-80 animate-pulse border border-slate-100 shadow-sm" />
+                ))}
               </div>
-            </AnimatedSection>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[
-                {
-                  step: "01",
-                  icon: Users,
-                  title: "Pilih Mentor",
-                  desc: "Pilih mentor sesuai kebutuhan dan keahlian yang Anda butuhkan.",
-                },
-                {
-                  step: "02",
-                  icon: Calendar,
-                  title: "Pilih Jadwal",
-                  desc: "Pilih slot waktu yang tersedia dan sesuai jadwal Anda.",
-                },
-                {
-                  step: "03",
-                  icon: CheckCircle2,
-                  title: "Mulai Sesi",
-                  desc: "Konfirmasi booking dan mulai sesi bimbingan 1-on-1 bersama mentor.",
-                },
-              ].map((item, i) => (
-                <AnimatedSection key={item.step} delay={i * 0.1}>
-                  <div className="card p-6 text-center">
-                    <div
-                      className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 text-white font-bold"
-                      style={{
-                        background: "var(--primary)",
-                        fontFamily: "'Space Grotesk', sans-serif",
-                        fontSize: "1.1rem",
-                      }}
-                    >
-                      {item.step}
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                {mentorsData.map((m, i) => (
+                  <AnimatedSection key={m.id} delay={i * 0.1}>
+                    <div className="group bg-white rounded-2xl p-8 md:p-10 border border-slate-100 hover:border-slate-300 hover:shadow-xl transition-all duration-500 flex flex-col h-full shadow-sm">
+                       <div className="flex flex-col md:flex-row gap-8 mb-8">
+                         {/* Avatar container */}
+                         <div className="relative flex-shrink-0">
+                            <div className="w-24 h-24 md:w-32 md:h-32 rounded-2xl bg-slate-50 overflow-hidden border-2 border-slate-100 shadow-md group-hover:shadow-lg group-hover:scale-105 transition-all duration-500">
+                               {m.image_url ? (
+                                 <img src={m.image_url} alt={m.name} className="w-full h-full object-cover" />
+                               ) : (
+                                 <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-white" style={{ background: m.color }}>
+                                   {m.avatar}
+                                 </div>
+                               )}
+                            </div>
+                            <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-green-500 border-4 border-white rounded-full flex items-center justify-center text-white">
+                               <CheckCircle2 size={16} />
+                            </div>
+                         </div>
+
+                         <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                               <Sparkles size={14} className="text-amber-400" />
+                               <span className="text-[10px] font-extrabold text-amber-500 uppercase tracking-widest">Featured Mentor</span>
+                            </div>
+                            <h3 className="text-2xl font-bold text-slate-900 mb-1 group-hover:text-blue-600 transition-colors" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{m.name}</h3>
+                            <p className="text-sm font-bold text-blue-600 mb-4">{m.title}</p>
+                            
+                            <div className="flex items-center gap-4 text-xs font-bold text-slate-500 mb-6">
+                               <div className="flex items-center gap-1">
+                                 <Star size={14} className="text-amber-400 fill-amber-400" />
+                                 <span className="text-slate-900">{m.rating}</span>
+                               </div>
+                               <div className="w-1 h-1 bg-slate-200 rounded-full" />
+                               <div className="flex items-center gap-1">
+                                 <Users size={14} className="text-slate-400" />
+                                 <span>{m.sessions} Sesi</span>
+                               </div>
+                            </div>
+
+                            <p className="text-sm text-slate-500 leading-relaxed line-clamp-2 md:line-clamp-none">
+                               {m.bio}
+                            </p>
+                         </div>
+                       </div>
+
+                       <div className="pt-8 border-t border-slate-50 flex flex-col md:flex-row items-center justify-between gap-6 mt-auto">
+                          <div className="flex flex-wrap gap-2 justify-center md:justify-start">
+                             {m.expertise.slice(0, 3).map((exp: string) => (
+                               <span key={exp} className="px-3 py-1.5 bg-slate-50 text-slate-600 text-[10px] font-bold rounded-xl border border-slate-100">
+                                  {exp}
+                               </span>
+                             ))}
+                             {m.expertise.length > 3 && <span className="text-[10px] font-bold text-slate-300 self-center">+{m.expertise.length - 3} More</span>}
+                          </div>
+
+                          <div className="flex items-center gap-4 w-full md:w-auto">
+                             <div className="text-right hidden sm:block">
+                                <p className="text-[10px] font-bold text-slate-400 uppercase">Per Sesi</p>
+                                <p className="text-lg font-bold text-slate-900">Rp {m.price.toLocaleString("id")}</p>
+                             </div>
+                             <button 
+                                onClick={() => setActiveMentor(m)}
+                                className="flex-1 md:flex-none px-8 py-4 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-black hover:-translate-y-0.5 transition-all shadow-md hover:shadow-lg"
+                             >
+                                Booking Mentor
+                             </button>
+                          </div>
+                       </div>
                     </div>
-                    <h4
-                      className="font-bold mb-2"
-                      style={{
-                        fontFamily: "'Space Grotesk', sans-serif",
-                        color: "var(--text-primary)",
-                      }}
-                    >
-                      {item.title}
-                    </h4>
-                    <p
-                      className="text-sm leading-relaxed"
-                      style={{ color: "var(--text-secondary)" }}
-                    >
-                      {item.desc}
-                    </p>
-                  </div>
-                </AnimatedSection>
-              ))}
-            </div>
+                  </AnimatedSection>
+                ))}
+              </div>
+            )}
           </div>
+        </section>
+
+        {/* Benefits Section */}
+        <section className="py-24 bg-white relative overflow-hidden">
+           <div className="container-main relative z-10 px-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-center">
+                 <div className="lg:col-span-1">
+                    <h2 className="text-3xl font-bold text-slate-900 mb-6 leading-tight" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Kenapa bimbingan 1-on-1 di Civilians?</h2>
+                    <p className="text-slate-500 mb-10 leading-relaxed">Metode belajar yang dipersonalisasi sesuai kendala Anda memberikan hasil 5x lebih cepat dibanding belajar otodidak.</p>
+                    <div className="space-y-6">
+                        {[
+                          { title: "Terarah & Spesifik", desc: "Langsung ke inti masalah yang Anda hadapi." },
+                          { title: "Fleksibel", desc: "Pilih jadwal yang paling cocok dengan rutinitas Anda." },
+                          { title: "Review Langsung", desc: "Dapatkan feedback instant untuk hasil pekerjaan Anda." }
+                        ].map((item, id) => (
+                          <div key={id} className="flex gap-4">
+                             <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 flex-shrink-0 mt-1">
+                                <CheckCircle2 size={14} />
+                             </div>
+                             <div>
+                                <h4 className="font-bold text-slate-900 text-sm mb-1">{item.title}</h4>
+                                <p className="text-xs text-slate-500">{item.desc}</p>
+                             </div>
+                          </div>
+                        ))}
+                    </div>
+                 </div>
+                 <div className="lg:col-span-2 relative">
+                    <div className="aspect-video bg-slate-900 rounded-[40px] shadow-2xl overflow-hidden relative group">
+                       <div className="absolute inset-0 bg-blue-600/20 mix-blend-overlay" />
+                       <div className="absolute inset-0 flex items-center justify-center">
+                          <button className="w-20 h-20 bg-white rounded-full flex items-center justify-center text-blue-600 shadow-2xl hover:scale-110 transition-transform">
+                             <ArrowRight size={32} />
+                          </button>
+                       </div>
+                       <div className="absolute bottom-10 left-10">
+                          <p className="text-white text-xl font-bold" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Sesi Real-time dengan Mentor</p>
+                          <p className="text-white/60 text-sm">Bagikan layar, diskusikan file, dan selesaikan tantangan teknis bersama.</p>
+                       </div>
+                    </div>
+                 </div>
+              </div>
+           </div>
         </section>
       </main>
 
       <Footer />
 
-      {/* Booking Modal */}
       <AnimatePresence>
         {activeMentor && (
           <BookingModal

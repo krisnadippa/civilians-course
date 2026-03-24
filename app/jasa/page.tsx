@@ -1,14 +1,16 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useState } from "react";
 import {
   Calculator, Building2, Ruler, Cpu, HardHat, Layers,
   CheckCircle2, ArrowRight, Clock, ChevronRight,
-  MessageSquare, Mail, Phone, Send,
+  MessageSquare, Mail, Phone, Send, Loader2,
 } from "lucide-react";
 import Navbar from "../_components/Navbar";
 import Footer from "../_components/Footer";
 import AnimatedSection from "../_components/AnimatedSection";
+import { supabase } from "@/lib/supabase";
 
 const services = [
   {
@@ -57,34 +59,74 @@ const steps = [
 ];
 
 export default function JasaPage() {
+  const [formData, setFormData] = useState({
+    name: "",
+    whatsapp: "",
+    service: "",
+    description: "",
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name || !formData.whatsapp || !formData.service) {
+      alert("Mohon lengkapi data Nama, WhatsApp, dan Layanan.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase.from("jasa").insert([
+        {
+          user_name: formData.name,
+          user_whatsapp: formData.whatsapp,
+          service_name: formData.service,
+          description: formData.description,
+          status: "Menunggu",
+          priority: "Normal"
+        }
+      ]);
+
+      if (error) throw error;
+      setIsSuccess(true);
+      setFormData({ name: "", whatsapp: "", service: "", description: "" });
+    } catch (err: any) {
+      alert("Gagal mengirim permintaan: " + err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };  const scrollToForm = (serviceTitle?: string) => {
+    if (serviceTitle) {
+      setFormData((prev) => ({ ...prev, service: serviceTitle }));
+    }
+    const formElement = document.getElementById("jasa-form");
+    if (formElement) {
+      formElement.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
   return (
     <>
       <Navbar />
       <main>
         {/* Hero */}
-        <section className="pt-48 pb-40 relative overflow-hidden" style={{ background: "var(--primary)" }}>
-          <div className="absolute inset-0 opacity-10"
-            style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.2) 1px, transparent 1px)", backgroundSize: "48px 48px" }}
-          />
+        <section className="pt-40 pb-24 relative overflow-hidden bg-white border-b border-slate-100">
           <div className="container-main relative z-10">
-            <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-5 h-0.5" style={{ background: "rgba(255,255,255,0.5)" }} />
-                <span className="text-xs font-bold tracking-widest uppercase" style={{ color: "rgba(255,255,255,0.65)" }}>Jasa Profesional</span>
+            <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="max-w-3xl">
+              <div className="flex items-center gap-3 mb-6">
+                <span className="px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-extrabold uppercase tracking-widest rounded-md border border-blue-100">
+                  Jasa Profesional
+                </span>
               </div>
-              <h1 className="text-white mb-4"
-                style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: "clamp(2.2rem, 5vw, 3.5rem)", fontWeight: 800, lineHeight: 1.1 }}>
-                Layanan Perancangan Teknik Sipil
+              <h1 className="text-slate-900 mb-6"
+                style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: "clamp(2.5rem, 5vw, 4rem)", fontWeight: 800, lineHeight: 1.1, letterSpacing: "-0.02em" }}>
+                Layanan Perancangan <br/><span className="text-blue-600">Teknik Sipil</span>
               </h1>
-              <p style={{ color: "rgba(255,255,255,0.7)", maxWidth: 520, fontSize: "1rem" }}>
+              <p className="text-lg text-slate-500 max-w-xl leading-relaxed">
                 Dikerjakan oleh tim praktisi berpengalaman dengan standar presisi tertinggi — dari RAB, desain struktur, hingga Civil 3D.
               </p>
             </motion.div>
-          </div>
-          <div className="absolute bottom-0 left-0 right-0 w-full overflow-hidden leading-none pointer-events-none">
-            <svg viewBox="0 0 1440 120" className="w-full h-auto" fill="none" preserveAspectRatio="none">
-              <path d="M0,0 C480,140 960,140 1440,0 L1440,120 L0,120 Z" fill="white" />
-            </svg>
           </div>
         </section>
 
@@ -105,7 +147,7 @@ export default function JasaPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
               {services.map((s, i) => (
                 <AnimatedSection key={s.id} delay={i * 0.07}>
-                  <div className="card p-6 h-full flex flex-col">
+                  <div className="card p-8 h-full flex flex-col">
                     <div className="flex items-start gap-4 mb-4">
                       <div className="icon-box-solid flex-shrink-0">
                         <s.icon size={20} color="white" strokeWidth={1.8} />
@@ -132,7 +174,10 @@ export default function JasaPage() {
 
                     <div className="flex items-center justify-between pt-4 mt-auto" style={{ borderTop: "1px solid var(--border)" }}>
                       <span className="font-bold text-sm" style={{ color: "var(--primary)", fontFamily: "'Space Grotesk', sans-serif" }}>{s.price}</span>
-                      <button className="btn-primary text-xs" style={{ padding: "7px 14px" }}>
+                      <button 
+                        onClick={() => scrollToForm(s.title)}
+                        className="btn-primary text-xs" style={{ padding: "7px 14px" }}
+                      >
                         Pesan <ArrowRight size={13} />
                       </button>
                     </div>
@@ -175,7 +220,7 @@ export default function JasaPage() {
         </section>
 
         {/* Consultation Form */}
-        <section className="py-28" style={{ background: "white" }}>
+        <section id="jasa-form" className="py-28" style={{ background: "white" }}>
           <div className="container-main">
             <div className="max-w-2xl mx-auto">
               <AnimatedSection>
@@ -190,31 +235,81 @@ export default function JasaPage() {
               </AnimatedSection>
 
               <AnimatedSection delay={0.1}>
-                <div className="card p-8">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--text-secondary)" }}>Nama Lengkap</label>
-                      <input type="text" placeholder="Ahmad Fauzi" className="w-full text-sm" style={{ color: "var(--text-primary)" }} />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--text-secondary)" }}>No. WhatsApp</label>
-                      <input type="tel" placeholder="08123456789" className="w-full text-sm" style={{ color: "var(--text-primary)" }} />
-                    </div>
-                  </div>
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--text-secondary)" }}>Layanan yang Dibutuhkan</label>
-                    <select className="w-full text-sm" style={{ color: "var(--text-primary)" }}>
-                      <option value="">-- Pilih Layanan --</option>
-                      {services.map((s) => <option key={s.id} value={s.title}>{s.title}</option>)}
-                    </select>
-                  </div>
-                  <div className="mb-6">
-                    <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--text-secondary)" }}>Deskripsi Proyek</label>
-                    <textarea rows={4} placeholder="Jelaskan kebutuhan proyek Anda secara singkat..." className="w-full text-sm" style={{ resize: "none", color: "var(--text-primary)" }} />
-                  </div>
-                  <button className="btn-primary w-full justify-center">
-                    Kirim Permintaan <Send size={16} />
-                  </button>
+                <div className="card p-10">
+                  {isSuccess ? (
+                    <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-8">
+                      <div className="w-16 h-16 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <CheckCircle2 size={32} />
+                      </div>
+                      <h3 className="text-xl font-bold mb-2">Permintaan Terkirim!</h3>
+                      <p className="text-sm text-slate-500 mb-6">Terima kasih, tim kami akan segera menghubungi Anda melalui WhatsApp dalam 1x24 jam.</p>
+                      <button onClick={() => setIsSuccess(false)} className="px-6 py-2 bg-slate-100 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-200 transition-all">
+                        Kirim Form Lain
+                      </button>
+                    </motion.div>
+                  ) : (
+                    <form onSubmit={handleSubmit}>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                          <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--text-secondary)" }}>Nama Lengkap</label>
+                          <input 
+                            type="text" required
+                            placeholder="Ahmad Fauzi" 
+                            className="w-full text-sm" 
+                            style={{ color: "var(--text-primary)" }}
+                            value={formData.name}
+                            onChange={(e) => setFormData({...formData, name: e.target.value})}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--text-secondary)" }}>No. WhatsApp</label>
+                          <input 
+                            type="tel" required
+                            placeholder="08123456789" 
+                            className="w-full text-sm" 
+                            style={{ color: "var(--text-primary)" }}
+                            value={formData.whatsapp}
+                            onChange={(e) => setFormData({...formData, whatsapp: e.target.value})}
+                          />
+                        </div>
+                      </div>
+                      <div className="mb-4">
+                        <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--text-secondary)" }}>Layanan yang Dibutuhkan</label>
+                        <select 
+                          required
+                          className="w-full text-sm" 
+                          style={{ color: "var(--text-primary)" }}
+                          value={formData.service}
+                          onChange={(e) => setFormData({...formData, service: e.target.value})}
+                        >
+                          <option value="">-- Pilih Layanan --</option>
+                          {services.map((s) => <option key={s.id} value={s.title}>{s.title}</option>)}
+                        </select>
+                      </div>
+                      <div className="mb-6">
+                        <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--text-secondary)" }}>Deskripsi Proyek</label>
+                        <textarea 
+                          rows={4} 
+                          placeholder="Jelaskan kebutuhan proyek Anda secara singkat..." 
+                          className="w-full text-sm" 
+                          style={{ resize: "none", color: "var(--text-primary)" }}
+                          value={formData.description}
+                          onChange={(e) => setFormData({...formData, description: e.target.value})}
+                        />
+                      </div>
+                      <button 
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="btn-primary w-full justify-center gap-2"
+                      >
+                        {isSubmitting ? (
+                          <>Mengirim... <Loader2 className="animate-spin" size={16} /></>
+                        ) : (
+                          <>Kirim Permintaan <Send size={16} /></>
+                        )}
+                      </button>
+                    </form>
+                  )}
                 </div>
               </AnimatedSection>
             </div>
