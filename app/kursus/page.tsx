@@ -650,16 +650,24 @@ export default function KursusPage() {
               textColor: c.color_theme ? `text-${c.color_theme}-700` : "text-emerald-700",
               badgeBg: c.color_theme ? `bg-${c.color_theme}-50 text-${c.color_theme}-700 border border-${c.color_theme}-200` : "bg-emerald-50 text-emerald-700 border border-emerald-200",
               tags: c.tags || [],
-              subcourses: matches.map(m => ({
-                id: m.id,
-                db_id: m.id,
-                title: m.title,
-                price: m.price,
-                mentor: m.instructor_names,
-                duration: m.duration || "2x Pertemuan",
-                level: m.level || "Dasar",
-                description: m.description || ""
-              }))
+              subcourses: matches
+                .sort((a, b) => {
+                  const order: Record<string, number> = { "Dasar": 1, "Menengah": 2, "Lanjutan": 3 };
+                  const lvlA = order[a.level] || 4;
+                  const lvlB = order[b.level] || 4;
+                  if (lvlA === lvlB) return a.price - b.price;
+                  return lvlA - lvlB;
+                })
+                .map(m => ({
+                  id: m.id,
+                  db_id: m.id,
+                  title: m.title,
+                  price: m.price,
+                  mentor: m.instructor_names,
+                  duration: m.duration || "2x Pertemuan",
+                  level: m.level || "Dasar",
+                  description: m.description || ""
+                }))
             } as Category;
           });
           setCategories(combined);
