@@ -35,6 +35,7 @@ const stats = [
 
 const coursePackages = [
   {
+    id: "civil3d",
     icon: Cpu, title: "Civil 3D",
     desc: "Pembuatan jalan + galian dan timbunan dengan standar industri konstruksi.",
     features: ["Corridor Design", "Earthwork Calculation", "Layouting"],
@@ -44,6 +45,7 @@ const coursePackages = [
     borderColor: "border-t-4 border-emerald-500",
   },
   {
+    id: "sap2000",
     icon: Building2, title: "SAP2000",
     desc: "Dari dasar hingga lanjutan — analisis struktur beton & baja sesuai SNI terbaru.",
     features: ["Pelatihan Dasar ASSTT", "Beton SNI 2847", "Analisis SRPMK"],
@@ -53,6 +55,7 @@ const coursePackages = [
     borderColor: "border-t-4 border-blue-500",
   },
   {
+    id: "bim",
     icon: Layers, title: "Pelatihan BIM",
     desc: "Paket lengkap BIM dari Tekla, Revit, hingga perhitungan RAB digital.",
     features: ["Tekla & Revit Modeling", "Ms. Project", "Integrasi RAB"],
@@ -99,6 +102,7 @@ function Counter({ target, suffix }: { target: number; suffix: string }) {
 export default function HomePage() {
   const [liveStats, setLiveStats] = useState(stats);
   const [liveMentors, setLiveMentors] = useState<Mentor[]>([]);
+  const [livePackages, setLivePackages] = useState(coursePackages);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -142,6 +146,18 @@ export default function HomePage() {
             avatarBg: m.color_theme ? `bg-${m.color_theme}-600` : "bg-emerald-600",
             initials: m.initials || m.name.substring(0, 2).toUpperCase()
           })));
+        }
+
+        const { data: cData } = await supabase.from("courses").select("category_id, price").eq("status", "Aktif");
+        if (cData && cData.length > 0) {
+          setLivePackages(prev => prev.map(pkg => {
+            const matches = cData.filter(c => c.category_id === pkg.id);
+            if (matches.length > 0) {
+              const minPrice = Math.min(...matches.map(m => m.price));
+              return { ...pkg, price: `Mulai Rp ${minPrice.toLocaleString("id")}` };
+            }
+            return pkg;
+          }));
         }
       } catch (err) {
         console.error("Gagal load data supabase", err);
@@ -268,7 +284,7 @@ export default function HomePage() {
             </AnimatedSection>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-7">
-              {coursePackages.map((s, i) => (
+              {livePackages.map((s, i) => (
                 <AnimatedSection key={s.title} delay={i * 0.08}>
                   <div className={`bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden h-full flex flex-col transition-all hover:shadow-lg ${s.borderColor}`}>
                     <div className="p-7 flex-1 flex flex-col">
