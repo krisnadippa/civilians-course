@@ -41,7 +41,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     // Daftar email admin diizinkan. Baca dari ENV, atau tambahkan email manual di array ini.
     // Contoh: NEXT_PUBLIC_ADMIN_EMAILS="admin@example.com,owner@example.com"
     const allowedEnv = process.env.NEXT_PUBLIC_ADMIN_EMAILS || "";
-    const allowedList = allowedEnv.split(",").map(e => e.trim().toLowerCase());
+    const allowedList = allowedEnv.split(",").map(e => e.replace(/['"]/g, '').trim().toLowerCase());
     
     // Fallback jika belum men-setup .env, izinkan semua sementara TAPI tampilkan warning (atau hardcode email di sini)
     // Untuk keamanan produksi, sebaiknya tolak jika tidak ada di array.

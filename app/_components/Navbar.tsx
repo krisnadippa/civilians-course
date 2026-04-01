@@ -48,7 +48,7 @@ export default function Navbar() {
     }
     const email = session.user.email?.toLowerCase() || "";
     const allowedEnv = process.env.NEXT_PUBLIC_ADMIN_EMAILS || "";
-    const allowedList = allowedEnv.split(",").map(e => e.trim().toLowerCase());
+    const allowedList = allowedEnv.split(",").map(e => e.replace(/['"]/g, '').trim().toLowerCase());
     setIsAdminUser(allowedList.includes(email));
   };
 
