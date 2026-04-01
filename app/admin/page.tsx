@@ -1,337 +1,210 @@
 "use client";
 
-import { useRef, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
-  Users, BookOpen, ShoppingBag, TrendingUp, ArrowUpRight,
-  Calendar, CheckCircle2, Clock, UserCheck, AlertCircle, Wrench
+  Users, BookOpen, ShoppingBag, ArrowUpRight,
+  CheckCircle2, Clock, UserCheck, AlertCircle, TrendingUp
 } from "lucide-react";
 import AnimatedSection from "../_components/AnimatedSection";
 import { supabase } from "@/lib/supabase";
 
-const recentOrders = [
-  { id: "#ORD-2401", user: "Ahmad Fauzi", item: "Template RAB Perumahan", status: "Selesai", amount: "145.000", date: "19 Mar 2026" },
-  { id: "#ORD-2399", user: "Dina Marlena", item: "Set Gambar CAD Ruko", status: "Selesai", amount: "195.000", date: "18 Mar 2026" },
-  { id: "#ORD-2395", user: "Rizki Pratama", item: "Model Civil 3D Jalan", status: "Diproses", amount: "225.000", date: "17 Mar 2026" },
-  { id: "#ORD-2390", user: "Sari Dewi", item: "Panduan SAP2000", status: "Selesai", amount: "95.000", date: "16 Mar 2026" },
-  { id: "#ORD-2385", user: "Budi Santoso Jr.", item: "Template RAB Gedung", status: "Menunggu", amount: "175.000", date: "15 Mar 2026" },
-];
-
-const recentBookings = [
-  { name: "Ahmad Fauzi", mentor: "Dr. Ir. Budi Santoso", slot: "Senin 19:00", status: "Dikonfirmasi" },
-  { name: "Siti Rohani", mentor: "Ir. Siti Rahayu", slot: "Selasa 18:00", status: "Pending" },
-  { name: "Rizki P.", mentor: "Andi Prasetyo", slot: "Rabu 20:00", status: "Dikonfirmasi" },
-  { name: "Dewi A.", mentor: "Dr. Dewi Kusuma", slot: "Kamis 19:00", status: "Dikonfirmasi" },
-];
-
-/* Simple inline chart using SVG */
-function RevenueChart() {
-  const data = [8, 12, 9, 15, 11, 18, 14, 20, 16, 22, 19, 24]; // simplified
-  const max = Math.max(...data);
-  const points = data.map((v, i) => `${(i / (data.length - 1)) * 380},${90 - (v / max) * 80}`).join(" ");
-
-  return (
-    <svg viewBox="0 0 400 100" className="w-full" style={{ height: 120 }}>
-      <defs>
-        <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#00897B" stopOpacity="0.3" />
-          <stop offset="100%" stopColor="#00897B" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      {/* Grid lines */}
-      {[0, 33, 66, 100].map((y) => (
-        <line key={y} x1="0" y1={y * 0.9} x2="400" y2={y * 0.9} stroke="rgba(84,110,122,0.1)" strokeWidth="1" />
-      ))}
-      {/* Area fill */}
-      <polygon
-        points={`0,90 ${points} 380,90`}
-        fill="url(#revGrad)"
-      />
-      {/* Line */}
-      <polyline points={points} fill="none" stroke="#00897B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-      {/* Dots */}
-      {data.map((v, i) => (
-        <circle key={i} cx={(i / (data.length - 1)) * 380} cy={90 - (v / max) * 80} r="3.5" fill="#00897B" />
-      ))}
-    </svg>
-  );
-}
-
-function BookingChart() {
-  const data = [
-    { mentor: "Budi S.", count: 87 },
-    { mentor: "Siti R.", count: 65 },
-    { mentor: "Andi P.", count: 54 },
-    { mentor: "Dewi K.", count: 42 },
-  ];
-  const max = Math.max(...data.map((d) => d.count));
-
-  return (
-    <div className="flex items-end gap-4 h-32">
-      {data.map((d, i) => (
-        <div key={d.mentor} className="flex-1 flex flex-col items-center gap-1.5">
-          <span className="text-xs font-bold" style={{ color: "var(--green)" }}>{d.count}</span>
-          <motion.div
-            initial={{ height: 0 }} animate={{ height: `${(d.count / max) * 100}px` }}
-            transition={{ duration: 0.8, delay: i * 0.1, ease: "easeOut" }}
-            className="w-full rounded-t-lg"
-            style={{ background: i % 2 === 0 ? "var(--green)" : "var(--slate-light)", minWidth: 32 }}
-          />
-          <span className="text-xs text-center" style={{ color: "var(--text-light)", fontSize: "0.65rem" }}>{d.mentor}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-const statusColors: Record<string, string> = {
-  "Selesai": "#00897B",
-  "Diproses": "#1A56DB",
-  "Menunggu": "#FFA000",
-  "Dikonfirmasi": "#00897B",
-  "Pending": "#FFA000",
-  "Tinggi": "#DC2626",
-};
-
 export default function AdminDashboard() {
   const [stats, setStats] = useState({
     users: 0,
-    kursus: 0,
+    courses: 0,
     mentors: 0,
-    jasa: 0,
-    products: 0
+    orders: 0
   });
+  const [recentOrders, setRecentOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchStats();
+    fetchData();
   }, []);
 
-  const isConfigured = 
-    process.env.NEXT_PUBLIC_SUPABASE_URL && 
-    !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("placeholder");
-
-  async function fetchStats() {
-    if (!isConfigured) {
-      setLoading(false);
-      return;
-    }
+  async function fetchData() {
     setLoading(true);
     try {
-      // Helper to fetch count for a table
       const getCount = async (table: string) => {
-        const { count, error } = await supabase
-          .from(table)
-          .select("*", { count: 'exact', head: true });
-        
-        if (error) {
-          console.error(`Error fetching count for ${table}:`, error);
-          return 0;
-        }
+        const { count, error } = await supabase.from(table).select("*", { count: 'exact', head: true });
+        if (error) { console.error(`Error fetching count for ${table}:`, error); return 0; }
         return count || 0;
       };
 
-      const [kCount, jCount, mCount, pCount] = await Promise.all([
-        getCount("kursus"),
-        getCount("jasa"),
+      const [cCount, mCount, oCount, uCount] = await Promise.all([
+        getCount("courses"),
         getCount("mentors"),
-        getCount("products")
+        getCount("course_orders"),
+        getCount("profiles") // if profiles exist
       ]);
 
       setStats({
-        users: 2418, // Mock for now
-        kursus: kCount,
-        jasa: jCount,
+        users: uCount || 0,
+        courses: cCount,
         mentors: mCount,
-        products: pCount
+        orders: oCount
       });
+
+      // Fetch recent orders
+      const { data: recent } = await supabase
+        .from("course_orders")
+        .select("id, status, price_paid, created_at, profiles(name), courses(title)")
+        .order("created_at", { ascending: false })
+        .limit(5);
+
+      if (recent) setRecentOrders(recent);
     } catch (error) {
       console.error("Fatal dashboard fetch error:", error);
     }
     setLoading(false);
   }
 
-  const kpiCards = [
-    { label: "Total Pengguna", value: stats.users.toLocaleString("id"), change: "+12.4%", up: true, icon: Users, color: "var(--primary)" },
-    { label: "Kursus Aktif", value: stats.kursus, change: "+3", up: true, icon: BookOpen, color: "#475569" },
-    { label: "Mentor", value: stats.mentors, change: "+1", up: true, icon: Calendar, color: "#3B82F6" },
-    { label: "Permintaan Jasa", value: stats.jasa, change: "+5", up: true, icon: Wrench, color: "#1E293B" },
+  const statCards = [
+    { title: "Total Pengguna", value: stats.users, icon: Users, color: "bg-blue-50 text-blue-600", border: "border-blue-100" },
+    { title: "Modul Aktif", value: stats.courses, icon: BookOpen, color: "bg-emerald-50 text-emerald-600", border: "border-emerald-100" },
+    { title: "Mentor", value: stats.mentors, icon: UserCheck, color: "bg-violet-50 text-violet-600", border: "border-violet-100" },
+    { title: "Transaksi", value: stats.orders, icon: ShoppingBag, color: "bg-amber-50 text-amber-600", border: "border-amber-100" },
   ];
 
   return (
-    <div>
-      {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#1C2433" }}>
-            Panel Ringkasan Platform
-          </h1>
-          <p className="text-sm" style={{ color: "var(--text-light)" }}>Data real-time ekosistem Civilians</p>
-        </div>
-        <div className="flex gap-2">
-          {!isConfigured ? (
-            <span className="px-3 py-1 rounded-full bg-red-50 text-red-600 text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5">
-              <AlertCircle size={12} /> Konfigurasi Belum Terdeteksi
-            </span>
-          ) : (
-            <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-widest">Sistem Aktif</span>
-          )}
+          <h1 className="text-2xl font-black text-slate-900" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Dashboard Admin</h1>
+          <p className="text-sm font-bold text-slate-500 mt-1">Ringkasan aktivitas platform Civilians.</p>
         </div>
       </div>
 
-      {!isConfigured && (
-        <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-3">
-          <AlertCircle className="text-amber-600 flex-shrink-0 mt-0.5" size={18} />
+      {!process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL.includes("placeholder") ? (
+        <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-start gap-3">
+          <AlertCircle className="text-amber-500 flex-shrink-0 mt-0.5" size={20} />
           <div>
-            <p className="text-sm font-bold text-amber-800">Koneksi Supabase Belum Siap</p>
-            <p className="text-xs text-amber-700 mt-1 leading-relaxed">
-              Environment variables di <code className="bg-amber-100 px-1 rounded">.env.local</code> belum terbaca oleh browser. 
-              Mohon <strong>matikan server (Ctrl+C)</strong> lalu jalankan kembali dengan <strong>npm run dev</strong>.
-              Pastikan tidak ada logo "placeholder" di file <code className="bg-amber-100 px-1 rounded">lib/supabase.ts</code>.
+            <h3 className="text-sm font-bold text-amber-800">Database Belum Terhubung</h3>
+            <p className="text-xs text-amber-700 mt-1">
+              Silakan perbarui file <code>.env.local</code> Anda dengan URL dan Anon Key dari Supabase untuk mengaktifkan admin panel.
             </p>
           </div>
         </div>
-      )}
+      ) : null}
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {kpiCards.map((kpi, i) => (
-          <AnimatedSection key={kpi.label} delay={i * 0.07}>
-            <div className="card p-5 border-none shadow-sm shadow-blue-500/5 bg-white">
-              <div className="flex items-start justify-between mb-3">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-                  style={{ background: `${kpi.color}10` }}>
-                  <kpi.icon size={20} style={{ color: kpi.color }} />
+      {/* STATS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {statCards.map((s, i) => (
+          <AnimatedSection key={s.title} delay={i * 0.1}>
+            <div className={`bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex items-center justify-between group hover:shadow-md transition-shadow`}>
+              <div>
+                <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 mb-1">{s.title}</p>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-3xl font-black text-slate-900" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                    {loading ? "..." : s.value}
+                  </h3>
+                  <span className="flex items-center text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
+                    <TrendingUp size={10} className="mr-0.5" /> +12%
+                  </span>
                 </div>
-                <span className="text-xs font-semibold flex items-center gap-0.5"
-                  style={{ color: kpi.up ? "var(--primary)" : "#800020" }}>
-                  <ArrowUpRight size={13} />
-                  {kpi.change}
-                </span>
               </div>
-              <p className="text-2xl font-extrabold mb-0.5"
-                style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#1C2433" }}>
-                {loading ? "..." : kpi.value}
-              </p>
-              <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--text-light)" }}>{kpi.label}</p>
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center border ${s.color} ${s.border}`}>
+                <s.icon size={20} />
+              </div>
             </div>
           </AnimatedSection>
         ))}
       </div>
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-        {/* Revenue */}
-        <AnimatedSection delay={0.1}>
-          <div className="card p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="font-bold text-sm" style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#1C2433" }}>
-                  Pendapatan Bulanan
-                </h3>
-                <p className="text-xs" style={{ color: "var(--text-light)" }}>Jan – Des 2025</p>
-              </div>
-              <span className="tag-green">+24.3% YoY</span>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* RECENT ORDERS */}
+        <AnimatedSection delay={0.4} className="lg:col-span-2">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden h-full flex flex-col">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+              <h2 className="font-extrabold text-slate-900 text-sm">Pesanan Terbaru</h2>
+              <Link href="/admin/orders" className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                Lihat Semua <ArrowUpRight size={14} />
+              </Link>
             </div>
-            <RevenueChart />
-            <div className="flex justify-between mt-2">
-              {["Jan", "Mar", "Mei", "Jul", "Sep", "Nov"].map((m) => (
-                <span key={m} className="text-xs" style={{ color: "var(--text-light)" }}>{m}</span>
-              ))}
-            </div>
-          </div>
-        </AnimatedSection>
-
-        {/* Booking Bar */}
-        <AnimatedSection delay={0.15}>
-          <div className="card p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="font-bold text-sm" style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#1C2433" }}>
-                  Status Booking Mentor
-                </h3>
-                <p className="text-xs" style={{ color: "var(--text-light)" }}>Bulan ini</p>
-              </div>
-              <span className="tag-green">87 sesi total</span>
-            </div>
-            <BookingChart />
-          </div>
-        </AnimatedSection>
-      </div>
-
-      {/* Tables Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Recent Orders */}
-        <AnimatedSection className="lg:col-span-2" delay={0.1}>
-          <div className="card p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-sm" style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#1C2433" }}>
-                Pesanan Terbaru
-              </h3>
-              <Link href="/admin/toko" className="text-xs font-medium" style={{ color: "var(--green)" }}>Lihat semua →</Link>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr style={{ borderBottom: "1px solid var(--border)" }}>
-                    {["ID", "Pengguna", "Produk", "Status", "Total"].map((h) => (
-                      <th key={h} className="pb-2.5 text-left font-semibold" style={{ color: "var(--text-light)" }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentOrders.map((o) => (
-                    <tr key={o.id} style={{ borderBottom: "1px solid rgba(84,110,122,0.08)" }}>
-                      <td className="py-3 font-mono" style={{ color: "var(--slate)" }}>{o.id}</td>
-                      <td className="py-3 font-medium" style={{ color: "#1C2433" }}>{o.user}</td>
-                      <td className="py-3" style={{ color: "var(--text-secondary)" }}>{o.item}</td>
-                      <td className="py-3">
-                        <span className="px-2 py-0.5 rounded-full text-xs font-semibold"
-                          style={{ background: `${statusColors[o.status]}20`, color: statusColors[o.status] }}>
-                          {o.status}
-                        </span>
-                      </td>
-                      <td className="py-3 font-semibold" style={{ color: "#1C2433" }}>Rp {o.amount}</td>
-                    </tr>
+            <div className="p-5 flex-1 flex flex-col justify-center">
+              {loading ? (
+                <p className="text-xs text-slate-400 text-center font-bold">Memuat...</p>
+              ) : recentOrders.length === 0 ? (
+                <p className="text-xs text-slate-400 text-center font-bold">Belum ada pesanan terbaru.</p>
+              ) : (
+                <div className="space-y-4">
+                  {recentOrders.map((ord, i) => (
+                    <div key={ord.id || i} className="flex items-center justify-between pb-4 border-b border-slate-100 last:border-0 last:pb-0">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                          ord.status === "Selesai" ? "bg-blue-50 text-blue-600" :
+                          ord.status === "Aktif" ? "bg-emerald-50 text-emerald-600" :
+                          ord.status === "Dibatalkan" ? "bg-red-50 text-red-600" :
+                          "bg-amber-50 text-amber-600"
+                        }`}>
+                          {ord.status === "Selesai" ? <CheckCircle2 size={18} /> : 
+                           ord.status === "Aktif" ? <BookOpen size={18} /> : 
+                           <Clock size={18} />}
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-slate-900">{ord.profiles?.name || "Kustomer"}</p>
+                          <p className="text-xs text-slate-500 truncate max-w-[150px] sm:max-w-xs">{ord.courses?.title || "Pesanan Kursus"}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-black text-slate-900" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                          Rp {(ord.price_paid || 0).toLocaleString()}
+                        </p>
+                        <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+                          {ord.status}
+                        </p>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
+                </div>
+              )}
             </div>
           </div>
         </AnimatedSection>
 
-        {/* Recent Bookings */}
-        <AnimatedSection delay={0.15}>
-          <div className="card p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-sm" style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#1C2433" }}>
-                Booking Terbaru
-              </h3>
-              <Link href="/admin/mentor" className="text-xs font-medium" style={{ color: "var(--green)" }}>Semua →</Link>
+        {/* QUICK ACTIONS */}
+        <AnimatedSection delay={0.5} className="lg:col-span-1">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden h-full flex flex-col">
+            <div className="p-5 border-b border-slate-100 bg-slate-50">
+              <h2 className="font-extrabold text-slate-900 text-sm">Aksi Cepat</h2>
             </div>
-            <div className="flex flex-col gap-3">
-              {recentBookings.map((b, i) => (
-                <div key={i} className="flex items-center gap-3 p-3 rounded-xl" style={{ background: "rgba(84,110,122,0.05)" }}>
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                    style={{ background: "var(--green)", fontFamily: "'Space Grotesk', sans-serif" }}>
-                    {b.name.charAt(0)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold truncate" style={{ color: "#1C2433" }}>{b.name}</p>
-                    <p className="text-xs truncate" style={{ color: "var(--text-light)" }}>{b.mentor}</p>
-                    <p className="text-xs" style={{ color: "var(--slate-light)" }}>{b.slot}</p>
-                  </div>
-                  <span className="px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0"
-                    style={{ background: `${statusColors[b.status]}20`, color: statusColors[b.status] }}>
-                    {b.status}
-                  </span>
+            <div className="p-5 space-y-3">
+              <Link href="/admin/kursus" className="w-full flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-colors group">
+                <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
+                  <BookOpen size={18} />
                 </div>
-              ))}
+                <div className="text-left flex-1 border-r border-slate-200">
+                  <p className="text-sm font-bold text-slate-900">Tambah Kursus</p>
+                  <p className="text-[10px] font-medium text-slate-500">Buat modul baru</p>
+                </div>
+              </Link>
+
+              <Link href="/admin/orders" className="w-full flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-colors group">
+                <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
+                  <ShoppingBag size={18} />
+                </div>
+                <div className="text-left flex-1 border-r border-slate-200">
+                  <p className="text-sm font-bold text-slate-900">Validasi Pembayaran</p>
+                  <p className="text-[10px] font-medium text-slate-500">Cek pesanan konfirmasi</p>
+                </div>
+              </Link>
+              
+              <Link href="/admin/mentor" className="w-full flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-colors group">
+                <div className="w-10 h-10 rounded-lg bg-violet-50 text-violet-600 flex items-center justify-center group-hover:bg-violet-100 transition-colors">
+                  <UserCheck size={18} />
+                </div>
+                <div className="text-left flex-1">
+                  <p className="text-sm font-bold text-slate-900">Kelola Mentor</p>
+                  <p className="text-[10px] font-medium text-slate-500">Tambah staf pengajar</p>
+                </div>
+              </Link>
             </div>
           </div>
         </AnimatedSection>
       </div>
+
     </div>
   );
 }

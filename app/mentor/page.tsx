@@ -3,420 +3,458 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Star, Users, Clock, Calendar, X, CheckCircle2, BookOpen, ArrowRight,
-  Building2, HardHat, Ruler, Cpu, Sparkles, MessageSquare, Linkedin, ExternalLink
+  Star, Users, CheckCircle2, BookOpen, ArrowRight, Award, X,
+  MessageSquare, Clock, Layers, Building2, Cpu, Target, Briefcase
 } from "lucide-react";
 import Navbar from "../_components/Navbar";
 import Footer from "../_components/Footer";
 import AnimatedSection from "../_components/AnimatedSection";
-import { supabase } from "@/lib/supabase";
+import Link from "next/link";
 
-function BookingModal({
-  mentor,
-  onClose,
-}: {
-  mentor: any;
-  onClose: () => void;
-}) {
-  const [selectedDate, setSelectedDate] = useState("");
-  const [selectedTime, setSelectedTime] = useState("");
-  const [topic, setTopic] = useState("");
-  const [booked, setBooked] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+/* ── TYPES ── */
+type Mentor = {
+  id: number;
+  name: string;
+  initials: string;
+  avatarBg: string;      // solid bg color class
+  accentColor: string;   // solid text color class
+  topBorder: string;     // top border class
+  role: string;
+  title: string;
+  courses: { name: string; bg: string }[];
+  courseIcons: any[];
+  expertise: string[];
+  rating: number;
+  sessions: number;
+  experience: string;
+  bio: string;
+  specialization: string[];
+  achievements: string[];
+};
 
-  // Suggested time slots
-  const timeSlots = ["09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00", "19:00", "20:00"];
+/* ── DATA ── */
+const mentors: Mentor[] = [
+  {
+    id: 1,
+    name: "Ratna Essya",
+    initials: "RE",
+    avatarBg: "bg-emerald-600",
+    accentColor: "text-emerald-700",
+    topBorder: "border-t-4 border-emerald-500",
+    role: "Civil 3D Specialist",
+    title: "Ahli Desain Jalan & Infrastruktur",
+    courses: [{ name: "Civil 3D", bg: "bg-emerald-600" }],
+    courseIcons: [Cpu],
+    expertise: ["Autodesk Civil 3D", "Corridor Design", "Volume Earthwork", "Drainase", "Road Alignment"],
+    rating: 4.9,
+    sessions: 87,
+    experience: "7+ Tahun",
+    bio: "Praktisi aktif di bidang desain infrastruktur dan perencanaan jalan. Telah terlibat dalam berbagai proyek jalan nasional dan regional menggunakan Autodesk Civil 3D.",
+    specialization: ["Perencanaan Geometric Jalan", "Perhitungan Galian & Timbunan", "Desain Koridor Civil 3D"],
+    achievements: ["Proyek Jalan Nasional Bali–Lombok", "Konsultan 20+ Proyek Civil 3D", "Certified Autodesk Professional"],
+  },
+  {
+    id: 2,
+    name: "Arimantara",
+    initials: "AR",
+    avatarBg: "bg-blue-600",
+    accentColor: "text-blue-700",
+    topBorder: "border-t-4 border-blue-500",
+    role: "Civil 3D & Structural Analyst",
+    title: "Spesialis Infrastruktur & Struktur",
+    courses: [{ name: "Civil 3D", bg: "bg-emerald-600" }, { name: "SAP2000", bg: "bg-blue-600" }],
+    courseIcons: [Cpu, Building2],
+    expertise: ["Civil 3D", "SAP2000", "Structural Analysis", "Beban Gempa", "SNI 2847"],
+    rating: 5.0,
+    sessions: 92,
+    experience: "9+ Tahun",
+    bio: "Konsultan senior dengan keahlian ganda di bidang infrastruktur sipil dan analisis struktur. Telah menyelesaikan ratusan proyek dari desain jalan hingga struktur gedung bertingkat.",
+    specialization: ["Desain Infrastruktur Civil 3D", "Analisis Struktur Beton & Baja", "Pelatihan SAP Dasar (ASSTT)"],
+    achievements: ["200+ Peserta Dibimbing", "Proyek Tol Trans-Jawa", "M.T. Teknik Sipil UI"],
+  },
+  {
+    id: 3,
+    name: "Eka Juniarta",
+    initials: "EJ",
+    avatarBg: "bg-indigo-600",
+    accentColor: "text-indigo-700",
+    topBorder: "border-t-4 border-indigo-500",
+    role: "SAP2000 & BIM Expert",
+    title: "Pakar Analisis Struktur & BIM",
+    courses: [{ name: "SAP2000", bg: "bg-blue-600" }, { name: "BIM", bg: "bg-violet-600" }],
+    courseIcons: [Building2, Layers],
+    expertise: ["SAP2000", "Revit", "Tekla", "SRPMK", "SNI 1729"],
+    rating: 4.9,
+    sessions: 78,
+    experience: "8+ Tahun",
+    bio: "Expert di dua bidang yang saling melengkapi: analisis struktur tingkat lanjut dan Building Information Modeling (BIM). Berpengalaman dalam pemodelan gedung beton dan baja sesuai SNI terbaru.",
+    specialization: ["SNI 2847 Beton Bertulang", "SNI 1729 Konstruksi Baja", "Analisis SRPMK & Respons Spektrum", "Revit & BIM Workflow"],
+    achievements: ["Certified BIM Manager", "Proyek Gedung 25 Lantai", "Pembicara Seminar Nasional BIM"],
+  },
+  {
+    id: 4,
+    name: "Bagaskara",
+    initials: "BG",
+    avatarBg: "bg-violet-600",
+    accentColor: "text-violet-700",
+    topBorder: "border-t-4 border-violet-500",
+    role: "BIM & Project Management",
+    title: "Spesialis BIM & Manajemen Proyek",
+    courses: [{ name: "BIM", bg: "bg-violet-600" }],
+    courseIcons: [Layers],
+    expertise: ["Tekla Structures", "Ms. Project", "Revit MEP", "RAB Otomatis", "4D BIM"],
+    rating: 5.0,
+    sessions: 65,
+    experience: "6+ Tahun",
+    bio: "Praktisi BIM dengan fokus pada integrasi workflow dari pemodelan 3D hingga penjadwalan proyek dan estimasi biaya otomatis. Berpengalaman pada proyek gedung komersial dan infrastruktur publik.",
+    specialization: ["Tekla Structural Designer", "Ms. Project Scheduling", "Perhitungan RAB dari Model BIM"],
+    achievements: ["BIM Implementation Lead", "Proyek BIM Award 2023", "S2 Manajemen Konstruksi"],
+  },
+];
 
-  const handleBook = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedDate || !selectedTime) return;
-    
-    setIsSubmitting(true);
-    try {
-      const { error } = await supabase.from("mentor_bookings").insert([
-        {
-          mentor_id: mentor.id,
-          user_name: "User Civilians", // In a real app, this would be the logged-in user
-          topic: topic || "Bimbingan Mentor",
-          booking_date: selectedDate,
-          booking_time: selectedTime,
-          status: "Pending"
-        }
-      ]);
-
-      if (error) throw error;
-      setBooked(true);
-    } catch (err: any) {
-      alert("Gagal membuat booking: " + err.message);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // Get tomorrow's date for min date
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const minDate = tomorrow.toISOString().split('T')[0];
-
+/* ── MENTOR MODAL ── */
+function MentorModal({ mentor, onClose }: { mentor: Mentor; onClose: () => void }) {
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md"
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <motion.div
-        initial={{ scale: 0.95, opacity: 0, y: 20 }}
-        animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.95, opacity: 0, y: 20 }}
-        className="bg-white rounded-[32px] w-full max-w-lg overflow-hidden shadow-2xl flex flex-col"
+        initial={{ scale: 0.96, y: 16, opacity: 0 }}
+        animate={{ scale: 1, y: 0, opacity: 1 }}
+        exit={{ scale: 0.96, y: 16, opacity: 0 }}
+        transition={{ type: "spring", stiffness: 280, damping: 28 }}
+        className={`bg-white rounded-2xl w-full max-w-xl shadow-2xl shadow-slate-300/40 flex flex-col overflow-hidden border-t-4 ${mentor.topBorder.split(" ")[1]} ${mentor.topBorder.split(" ")[0]}`}
         style={{ maxHeight: "90vh" }}
       >
-        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
-          <div className="flex items-center gap-4">
-             <div className="w-12 h-12 rounded-2xl bg-slate-100 overflow-hidden flex-shrink-0 border border-slate-200">
-               {mentor.image_url ? (
-                 <img src={mentor.image_url} alt={mentor.name} className="w-full h-full object-cover" />
-               ) : (
-                 <div className="w-full h-full flex items-center justify-center bg-blue-600 text-white font-bold">
-                   {mentor.avatar}
-                 </div>
-               )}
-             </div>
-             <div>
-               <h3 className="font-bold text-slate-900 leading-tight">{mentor.name}</h3>
-               <p className="text-xs text-slate-500">{mentor.title}</p>
-             </div>
+        {/* Header */}
+        <div className="flex items-center gap-5 px-7 py-6 border-b border-slate-100 bg-slate-50">
+          <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-white font-black text-2xl flex-shrink-0 shadow-sm ${mentor.avatarBg}`}
+            style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+            {mentor.initials}
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors font-bold"><X size={20} className="text-slate-400" /></button>
+          <div className="flex-1">
+            <div className="flex flex-wrap items-center gap-1.5 mb-1">
+              <span className="px-2 py-0.5 bg-amber-50 text-amber-700 text-[10px] font-extrabold rounded-md border border-amber-200">Expert</span>
+              <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-extrabold rounded-md border border-slate-200">{mentor.experience}</span>
+            </div>
+            <h2 className="font-extrabold text-slate-900 text-xl leading-tight" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{mentor.name}</h2>
+            <p className="text-xs font-bold text-slate-500 mt-0.5">{mentor.title}</p>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-200 text-slate-500 transition-colors flex-shrink-0">
+            <X size={18} />
+          </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
-          {booked ? (
-            <div className="text-center py-10">
-              <div className="w-20 h-20 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
-                <CheckCircle2 size={40} />
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Courses */}
+          <div className="flex flex-wrap gap-2">
+            {mentor.courses.map((c) => (
+              <span key={c.name} className={`px-3 py-1.5 ${c.bg} text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-sm`}>
+                <BookOpen size={11} /> {c.name}
+              </span>
+            ))}
+          </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-3 bg-slate-50 rounded-xl p-4 border border-slate-100">
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-1 mb-0.5">
+                <Star size={13} className="text-amber-400 fill-amber-400" />
+                <span className="font-extrabold text-slate-900 text-sm">{mentor.rating}</span>
               </div>
-              <h3 className="text-2xl font-bold text-slate-900 mb-2" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Booking Dikirim!</h3>
-              <p className="text-slate-500 mb-8 max-w-xs mx-auto">Permintaan bimbingan Anda telah masuk ke sistem. Tim kami akan segera mengkonfirmasi via WhatsApp/Email.</p>
-              <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 mb-8 text-left">
-                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Detil Sesi:</p>
-                 <div className="flex items-center gap-3 text-sm font-bold text-slate-700">
-                    <Calendar size={16} className="text-blue-500" /> {selectedDate} pk {selectedTime} WIB
-                 </div>
-              </div>
-              <button onClick={onClose} className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold text-sm hover:bg-black transition-all">Tutup</button>
+              <p className="text-[9px] text-slate-400 font-extrabold uppercase tracking-wider">Rating</p>
             </div>
-          ) : (
-            <form onSubmit={handleBook} className="space-y-8">
-               <div className="bg-blue-50 p-6 rounded-3xl border border-blue-100 flex items-center justify-between">
-                  <div>
-                    <p className="text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-1">Fee Bimbingan</p>
-                    <p className="text-2xl font-extrabold text-blue-700" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Rp {mentor.price.toLocaleString("id")}</p>
-                    <p className="text-[10px] text-blue-400 font-medium">Durasi 60 Menit / Sesi</p>
-                  </div>
-                  <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600">
-                    <Clock size={24} />
-                  </div>
-               </div>
+            <div className="text-center border-x border-slate-200">
+              <p className="font-extrabold text-slate-900 text-sm">{mentor.sessions}+</p>
+              <p className="text-[9px] text-slate-400 font-extrabold uppercase tracking-wider">Sesi</p>
+            </div>
+            <div className="text-center">
+              <p className="font-extrabold text-slate-900 text-sm">{mentor.experience}</p>
+              <p className="text-[9px] text-slate-400 font-extrabold uppercase tracking-wider">Pengalaman</p>
+            </div>
+          </div>
 
-               <div className="space-y-6">
-                 <div>
-                   <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">1. Pilih Tanggal</label>
-                   <input 
-                      type="date"
-                      min={minDate}
-                      required
-                      className="w-full p-4 bg-slate-50 rounded-2xl border border-slate-100 outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white text-sm font-bold transition-all"
-                      value={selectedDate}
-                      onChange={(e) => setSelectedDate(e.target.value)}
-                   />
-                 </div>
+          {/* Bio */}
+          <div>
+            <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">Profil</p>
+            <p className="text-sm text-slate-600 leading-relaxed">{mentor.bio}</p>
+          </div>
 
-                 <div>
-                   <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">2. Pilih Jam Sesi</label>
-                   <div className="grid grid-cols-3 gap-2">
-                     {timeSlots.map((time) => (
-                       <button
-                         key={time}
-                         type="button"
-                         onClick={() => setSelectedTime(time)}
-                         className={`px-3 py-3 rounded-xl text-xs font-bold transition-all border ${
-                           selectedTime === time 
-                             ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-200" 
-                             : "bg-white border-slate-100 text-slate-600 hover:border-slate-300"
-                         }`}
-                       >
-                         {time}
-                       </button>
-                     ))}
-                   </div>
-                 </div>
+          {/* Expertise */}
+          <div>
+            <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">Keahlian</p>
+            <div className="flex flex-wrap gap-1.5">
+              {mentor.expertise.map((e) => (
+                <span key={e} className="px-2.5 py-1.5 bg-slate-100 text-slate-700 text-[11px] font-bold rounded-lg border border-slate-200 hover:bg-slate-200 transition-colors">
+                  {e}
+                </span>
+              ))}
+            </div>
+          </div>
 
-                 <div>
-                   <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">3. Topik Diskusi (Opsional)</label>
-                   <textarea
-                     rows={3}
-                     placeholder="Sebutkan kendala atau materi yang ingin Anda tanyakan..."
-                     className="w-full p-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-blue-500/20 text-sm font-medium transition-all resize-none"
-                     value={topic}
-                     onChange={(e) => setTopic(e.target.value)}
-                   />
-                 </div>
-               </div>
+          {/* Specialization */}
+          <div>
+            <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">Spesialisasi Pengajaran</p>
+            <div className="space-y-2">
+              {mentor.specialization.map((s) => (
+                <div key={s} className="flex items-start gap-2.5 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                  <CheckCircle2 size={14} className="text-emerald-500 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm font-medium text-slate-700">{s}</p>
+                </div>
+              ))}
+            </div>
+          </div>
 
-               <button
-                 type="submit"
-                 disabled={!selectedDate || !selectedTime}
-                 className={`w-full py-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${
-                   !selectedDate || !selectedTime
-                     ? "bg-slate-100 text-slate-400 cursor-not-allowed" 
-                     : "bg-slate-900 text-white hover:bg-black shadow-xl shadow-slate-200"
-                 }`}
-               >
-                 Konfirmasi Booking <ArrowRight size={18} />
-               </button>
-            </form>
-          )}
+          {/* Achievements */}
+          <div>
+            <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">Pencapaian</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {mentor.achievements.map((a) => (
+                <div key={a} className="p-3 bg-white rounded-xl border border-slate-200 text-center shadow-sm">
+                  <Award size={16} className="text-amber-500 mx-auto mb-1.5" />
+                  <p className="text-xs font-bold text-slate-700 leading-tight">{a}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <Link
+            href="/kursus"
+            onClick={onClose}
+            className="w-full py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 bg-slate-900 text-white hover:bg-blue-700 transition-colors shadow-md"
+          >
+            Daftar Kursus {mentor.courses.map(c => c.name).join(" & ")} <ArrowRight size={15} />
+          </Link>
         </div>
       </motion.div>
     </motion.div>
   );
 }
 
+/* ── PAGE ── */
 export default function MentorPage() {
-  const [mentorsData, setMentorsData] = useState<any[]>([]);
+  const [selectedMentor, setSelectedMentor] = useState<Mentor | null>(null);
+  const [liveMentors, setLiveMentors] = useState<Mentor[]>(mentors);
   const [loading, setLoading] = useState(true);
-  const [activeMentor, setActiveMentor] = useState<any | null>(null);
 
   useEffect(() => {
-    const fetchMentorsData = async () => {
-      setLoading(true);
+    const fetchMentors = async () => {
       try {
-        const { data, error } = await supabase
-          .from("mentors")
-          .select("*")
-          .neq("status", "Draft") 
-          .order("name", { ascending: true });
-        
-        if (error) throw error;
+        const { data } = await import("@/lib/supabase").then(m => m.supabase.from("mentors").select("*"));
+        if (data && data.length > 0) {
+          const parseArray = (val: any) => {
+            if (Array.isArray(val)) return val;
+            if (typeof val === 'string') {
+              try { const parsed = JSON.parse(val); if (Array.isArray(parsed)) return parsed; } 
+              catch { return val.split(',').map(s => s.trim()).filter(Boolean); }
+            }
+            return [];
+          };
 
-        if (data) {
-          const mapped = data.map((m: any) => ({
-            ...m,
+          const mapped = data.map(m => ({
             id: m.id,
-            avatar: m.image_url ? null : (m.avatar_initials || m.name.charAt(0)),
-            color: m.color_code || "#3B82F6",
             name: m.name,
-            title: m.title || "Senior Mentor",
-            bio: m.bio || "Berpengalaman membimbing mahasiswa teknik sipil dalam mengerjakan tugas akhir dan proyek praktis.",
-            expertise: Array.isArray(m.expertise) ? m.expertise : (m.expertise?.split(",") || ["General"]),
+            initials: m.initials || m.name.substring(0, 2).toUpperCase(),
+            avatarBg: m.color_theme ? `bg-${m.color_theme}-600` : "bg-emerald-600",
+            accentColor: m.color_theme ? `text-${m.color_theme}-700` : "text-emerald-700",
+            topBorder: m.color_theme ? `border-t-4 border-${m.color_theme}-500` : "border-t-4 border-emerald-500",
+            role: m.role || "Mentor",
+            title: m.title || "Ahli Teknik Sipil",
+            courses: parseArray(m.courses_handled).map((c: string) => ({ name: c, bg: m.color_theme ? `bg-${m.color_theme}-600` : "bg-emerald-600" })),
+            courseIcons: [BookOpen],
+            expertise: parseArray(m.expertise_tags),
             rating: m.rating || 5.0,
             sessions: m.sessions_count || 0,
-            price: m.price || 150000,
-            available: Array.isArray(m.available_slots) ? m.available_slots : ["Senin 19:00", "Rabu 19:00"],
-            image_url: m.image_url
+            experience: m.experience || "5+ Tahun",
+            bio: m.bio || "-",
+            specialization: parseArray(m.specializations),
+            achievements: parseArray(m.achievements),
           }));
-          setMentorsData(mapped);
+          setLiveMentors(mapped);
         }
-      } catch (err) {
-        console.error("Error fetching mentors:", err);
-      } finally {
-        setLoading(false);
+      } catch (e) {
+        console.error("Gagal load mentor statis", e);
       }
+      setLoading(false);
     };
-    fetchMentorsData();
+    fetchMentors();
   }, []);
 
   return (
     <>
       <Navbar />
-      <main className="bg-[#F8FAFC]">
-        {/* ── HERO SECTION ── */}
-        {/* ── HERO SECTION ── */}
-        <section className="relative pt-40 pb-24 overflow-hidden bg-white border-b border-slate-100">
-          <div className="container-main relative z-10">
-            <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="max-w-3xl mx-auto text-center">
-              <div className="flex items-center justify-center gap-2 mb-6">
-                <span className="px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-extrabold tracking-widest uppercase rounded-md border border-blue-100">Expert Mentorship</span>
-              </div>
-              
-              <h1 className="text-slate-900 mb-6 leading-[1.1]"
-                style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: "clamp(2.5rem, 6vw, 4.5rem)", fontWeight: 800, letterSpacing: "-0.02em" }}>
-                Pelajari Langsung dari <br/><span className="text-blue-600">Para Praktisi</span>
+
+      <main className="bg-slate-50 min-h-screen">
+        {/* ── HERO ── */}
+        <section className="bg-white border-b border-slate-200 pt-36 pb-20 px-6">
+          <div className="container-main max-w-3xl mx-auto text-center">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+              <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-full text-amber-700 text-[11px] font-extrabold uppercase tracking-widest mb-5">
+                <Award size={11} /> Tim Pengajar Berpengalaman
+              </span>
+              <h1 className="text-slate-900 mb-4 leading-tight"
+                style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: "clamp(2rem, 5vw, 3.5rem)", fontWeight: 800, letterSpacing: "-0.02em" }}>
+                Belajar dari Praktisi<br />Aktif di Industri
               </h1>
-              
-              <p className="text-lg mb-10 max-w-2xl mx-auto leading-relaxed text-slate-500">
-                Bimbingan 1-on-1 eksklusif bersama praktisi senior untuk menguasai software teknik, penyusunan RAB, hingga konsultasi Tugas Akhir dengan standar industri.
+              <p className="text-base text-slate-500 max-w-xl mx-auto leading-relaxed mb-8">
+                4 mentor kami adalah konsultan yang aktif terlibat dalam proyek konstruksi nyata di Indonesia.
               </p>
-              
-              <div className="flex flex-wrap items-center justify-center gap-4 mt-6">
-                <div className="flex items-center gap-3 px-6 py-4 bg-slate-50 border border-slate-200 rounded-xl">
-                   <CheckCircle2 className="text-blue-600" size={20} />
-                   <p className="text-sm font-bold text-slate-700 tracking-wide">Sesi Privat 60 Menit</p>
-                </div>
-                <div className="flex items-center gap-3 px-6 py-4 bg-slate-50 border border-slate-200 rounded-xl">
-                   <MessageSquare className="text-blue-600" size={20} />
-                   <p className="text-sm font-bold text-slate-700 tracking-wide">Q&A Tak Terbatas</p>
-                </div>
+              <div className="flex flex-wrap justify-center gap-3">
+                {[
+                  { val: "4 Mentor", sub: "Aktif di Industri" },
+                  { val: "4.9 / 5", sub: "Rata-rata Rating" },
+                  { val: "7–9 Tahun", sub: "Pengalaman" },
+                ].map(({ val, sub }) => (
+                  <div key={sub} className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-left shadow-sm">
+                    <p className="font-extrabold text-slate-900 text-sm">{val}</p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{sub}</p>
+                  </div>
+                ))}
               </div>
             </motion.div>
           </div>
         </section>
 
-        {/* Mentors Section */}
-        <section className="py-24 px-6">
+        {/* ── MENTOR GRID ── */}
+        <section className="py-16 px-6">
           <div className="container-main">
-            <div className="flex items-center justify-between mb-16">
-               <div>
-                  <h2 className="text-3xl font-bold text-slate-900 mb-2" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Pilih Mentor Anda</h2>
-                  <p className="text-slate-500">Menghubungkan Anda dengan expertise terbaik di bidang perancangan dan sipil.</p>
-               </div>
-               <div className="hidden md:flex gap-2">
-                  <div className="px-4 py-2 bg-white border border-slate-100 rounded-xl text-xs font-bold text-slate-600 shadow-sm">
-                    {mentorsData.length} Mentor Aktif
+            <AnimatedSection>
+              <div className="text-center mb-10">
+                <h2 className="text-2xl font-extrabold text-slate-900 mb-2" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Kenali Mentor Kami</h2>
+                <p className="text-sm text-slate-500 font-medium">Klik "Lihat Profil" untuk melihat keahlian dan spesialisasi lengkap masing-masing mentor.</p>
+              </div>
+            </AnimatedSection>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-7">
+              {liveMentors.map((m, i) => (
+                <AnimatedSection key={m.id} delay={i * 0.08}>
+                  <div className={`bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 flex flex-col ${m.topBorder}`}>
+                    <div className="p-7 flex-1 flex flex-col">
+                      {/* Top: avatar + name */}
+                      <div className="flex items-start gap-4 mb-5">
+                        <div
+                          className={`w-16 h-16 rounded-2xl flex items-center justify-center text-white font-black text-2xl flex-shrink-0 shadow-sm ${m.avatarBg}`}
+                          style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+                        >
+                          {m.initials}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap gap-1.5 mb-1.5">
+                            <span className="px-2 py-0.5 bg-amber-50 text-amber-700 text-[10px] font-extrabold rounded-md border border-amber-200">Expert</span>
+                            <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-extrabold rounded-md border border-slate-200">{m.experience}</span>
+                          </div>
+                          <h3 className="text-lg font-extrabold text-slate-900 leading-tight" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{m.name}</h3>
+                          <p className="text-xs font-bold text-slate-500 mt-0.5">{m.role}</p>
+                        </div>
+                      </div>
+
+                      {/* Bio */}
+                      <p className="text-sm text-slate-600 leading-relaxed line-clamp-2 mb-4">{m.bio}</p>
+
+                      {/* Stats */}
+                      <div className="grid grid-cols-3 gap-3 mb-4 bg-slate-50 rounded-xl p-3.5 border border-slate-100">
+                        <div className="text-center">
+                          <div className="flex items-center justify-center gap-1 mb-0.5">
+                            <Star size={12} className="text-amber-400 fill-amber-400" />
+                            <span className="font-extrabold text-slate-900 text-sm">{m.rating}</span>
+                          </div>
+                          <p className="text-[9px] text-slate-400 font-extrabold uppercase tracking-wider">Rating</p>
+                        </div>
+                        <div className="text-center border-x border-slate-200">
+                          <p className="font-extrabold text-slate-900 text-sm">{m.sessions}+</p>
+                          <p className="text-[9px] text-slate-400 font-extrabold uppercase tracking-wider">Sesi</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="font-extrabold text-slate-900 text-sm">{m.courses.length}</p>
+                          <p className="text-[9px] text-slate-400 font-extrabold uppercase tracking-wider">Paket</p>
+                        </div>
+                      </div>
+
+                      {/* Expertise tags */}
+                      <div className="mb-4">
+                        <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">Keahlian</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {m.expertise.slice(0, 4).map((e) => (
+                            <span key={e} className="px-2.5 py-1 bg-slate-100 text-slate-700 text-[11px] font-bold rounded-lg border border-slate-200">
+                              {e}
+                            </span>
+                          ))}
+                          {m.expertise.length > 4 && (
+                            <span className="px-2.5 py-1 bg-slate-100 text-slate-400 text-[11px] font-bold rounded-lg border border-slate-200">
+                              +{m.expertise.length - 4}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Course badges */}
+                      <div className="mb-5">
+                        <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">Mengajar Paket</p>
+                        <div className="flex flex-wrap gap-2">
+                          {m.courses.map((c) => (
+                            <span key={c.name} className={`px-3 py-1.5 ${c.bg} text-white text-[11px] font-bold rounded-xl shadow-sm`}>
+                              {c.name}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="mt-auto flex gap-2.5">
+                        <button
+                          onClick={() => setSelectedMentor(m)}
+                          className="flex-1 py-3 rounded-xl text-sm font-bold border-2 border-slate-200 text-slate-800 hover:border-slate-400 hover:bg-slate-50 transition-all"
+                        >
+                          Lihat Profil
+                        </button>
+                        <Link
+                          href="/kursus"
+                          className="flex-1 py-3 rounded-xl text-sm font-bold bg-slate-900 text-white flex items-center justify-center gap-1.5 hover:bg-blue-700 transition-colors shadow-sm"
+                        >
+                          Daftar Kursus <ArrowRight size={14} />
+                        </Link>
+                      </div>
+                    </div>
                   </div>
-               </div>
+                </AnimatedSection>
+              ))}
             </div>
 
-            {loading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {[1,2,3,4].map(i => (
-                  <div key={i} className="bg-white rounded-2xl p-10 h-80 animate-pulse border border-slate-100 shadow-sm" />
-                ))}
+            {/* Bottom CTA row */}
+            <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-blue-600 rounded-2xl p-7 text-white">
+                <BookOpen size={28} className="text-blue-200 mb-3" />
+                <h3 className="text-lg font-extrabold mb-2" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Siap Belajar?</h3>
+                <p className="text-blue-100 text-sm leading-relaxed mb-5">Pilih paket kursus dan daftar bersama mentor pilihan Anda.</p>
+                <Link href="/kursus" className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-blue-700 rounded-xl font-bold text-sm hover:bg-blue-50 transition-colors shadow-lg">
+                  Pilih Kursus <ArrowRight size={14} />
+                </Link>
               </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                {mentorsData.map((m, i) => (
-                  <AnimatedSection key={m.id} delay={i * 0.1}>
-                    <div className="group bg-white rounded-2xl p-8 md:p-10 border border-slate-100 hover:border-slate-300 hover:shadow-xl transition-all duration-500 flex flex-col h-full shadow-sm">
-                       <div className="flex flex-col md:flex-row gap-8 mb-8">
-                         {/* Avatar container */}
-                         <div className="relative flex-shrink-0">
-                            <div className="w-24 h-24 md:w-32 md:h-32 rounded-2xl bg-slate-50 overflow-hidden border-2 border-slate-100 shadow-md group-hover:shadow-lg group-hover:scale-105 transition-all duration-500">
-                               {m.image_url ? (
-                                 <img src={m.image_url} alt={m.name} className="w-full h-full object-cover" />
-                               ) : (
-                                 <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-white" style={{ background: m.color }}>
-                                   {m.avatar}
-                                 </div>
-                               )}
-                            </div>
-                            <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-green-500 border-4 border-white rounded-full flex items-center justify-center text-white">
-                               <CheckCircle2 size={16} />
-                            </div>
-                         </div>
-
-                         <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                               <Sparkles size={14} className="text-amber-400" />
-                               <span className="text-[10px] font-extrabold text-amber-500 uppercase tracking-widest">Featured Mentor</span>
-                            </div>
-                            <h3 className="text-2xl font-bold text-slate-900 mb-1 group-hover:text-blue-600 transition-colors" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{m.name}</h3>
-                            <p className="text-sm font-bold text-blue-600 mb-4">{m.title}</p>
-                            
-                            <div className="flex items-center gap-4 text-xs font-bold text-slate-500 mb-6">
-                               <div className="flex items-center gap-1">
-                                 <Star size={14} className="text-amber-400 fill-amber-400" />
-                                 <span className="text-slate-900">{m.rating}</span>
-                               </div>
-                               <div className="w-1 h-1 bg-slate-200 rounded-full" />
-                               <div className="flex items-center gap-1">
-                                 <Users size={14} className="text-slate-400" />
-                                 <span>{m.sessions} Sesi</span>
-                               </div>
-                            </div>
-
-                            <p className="text-sm text-slate-500 leading-relaxed line-clamp-2 md:line-clamp-none">
-                               {m.bio}
-                            </p>
-                         </div>
-                       </div>
-
-                       <div className="pt-8 border-t border-slate-50 flex flex-col md:flex-row items-center justify-between gap-6 mt-auto">
-                          <div className="flex flex-wrap gap-2 justify-center md:justify-start">
-                             {m.expertise.slice(0, 3).map((exp: string) => (
-                               <span key={exp} className="px-3 py-1.5 bg-slate-50 text-slate-600 text-[10px] font-bold rounded-xl border border-slate-100">
-                                  {exp}
-                               </span>
-                             ))}
-                             {m.expertise.length > 3 && <span className="text-[10px] font-bold text-slate-300 self-center">+{m.expertise.length - 3} More</span>}
-                          </div>
-
-                          <div className="flex items-center gap-4 w-full md:w-auto">
-                             <div className="text-right hidden sm:block">
-                                <p className="text-[10px] font-bold text-slate-400 uppercase">Per Sesi</p>
-                                <p className="text-lg font-bold text-slate-900">Rp {m.price.toLocaleString("id")}</p>
-                             </div>
-                             <button 
-                                onClick={() => setActiveMentor(m)}
-                                className="flex-1 md:flex-none px-8 py-4 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-black hover:-translate-y-0.5 transition-all shadow-md hover:shadow-lg"
-                             >
-                                Booking Mentor
-                             </button>
-                          </div>
-                       </div>
-                    </div>
-                  </AnimatedSection>
-                ))}
+              <div className="bg-slate-900 rounded-2xl p-7 text-white">
+                <MessageSquare size={28} className="text-slate-500 mb-3" />
+                <h3 className="text-lg font-extrabold mb-2" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Ada Pertanyaan?</h3>
+                <p className="text-slate-400 text-sm leading-relaxed mb-5">Konsultasi pemilihan kursus via WhatsApp admin kami.</p>
+                <a
+                  href="https://wa.me/6287762635300" target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm text-white transition-all hover:opacity-90 shadow-lg"
+                  style={{ background: "#25D366" }}
+                >
+                  <MessageSquare size={14} /> WhatsApp Admin
+                </a>
               </div>
-            )}
+            </div>
           </div>
-        </section>
-
-        {/* Benefits Section */}
-        <section className="py-24 bg-white relative overflow-hidden">
-           <div className="container-main relative z-10 px-6">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-center">
-                 <div className="lg:col-span-1">
-                    <h2 className="text-3xl font-bold text-slate-900 mb-6 leading-tight" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Kenapa bimbingan 1-on-1 di Civilians?</h2>
-                    <p className="text-slate-500 mb-10 leading-relaxed">Metode belajar yang dipersonalisasi sesuai kendala Anda memberikan hasil 5x lebih cepat dibanding belajar otodidak.</p>
-                    <div className="space-y-6">
-                        {[
-                          { title: "Terarah & Spesifik", desc: "Langsung ke inti masalah yang Anda hadapi." },
-                          { title: "Fleksibel", desc: "Pilih jadwal yang paling cocok dengan rutinitas Anda." },
-                          { title: "Review Langsung", desc: "Dapatkan feedback instant untuk hasil pekerjaan Anda." }
-                        ].map((item, id) => (
-                          <div key={id} className="flex gap-4">
-                             <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 flex-shrink-0 mt-1">
-                                <CheckCircle2 size={14} />
-                             </div>
-                             <div>
-                                <h4 className="font-bold text-slate-900 text-sm mb-1">{item.title}</h4>
-                                <p className="text-xs text-slate-500">{item.desc}</p>
-                             </div>
-                          </div>
-                        ))}
-                    </div>
-                 </div>
-                 <div className="lg:col-span-2 relative">
-                    <div className="aspect-video bg-slate-900 rounded-[40px] shadow-2xl overflow-hidden relative group">
-                       <div className="absolute inset-0 bg-blue-600/20 mix-blend-overlay" />
-                       <div className="absolute inset-0 flex items-center justify-center">
-                          <button className="w-20 h-20 bg-white rounded-full flex items-center justify-center text-blue-600 shadow-2xl hover:scale-110 transition-transform">
-                             <ArrowRight size={32} />
-                          </button>
-                       </div>
-                       <div className="absolute bottom-10 left-10">
-                          <p className="text-white text-xl font-bold" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Sesi Real-time dengan Mentor</p>
-                          <p className="text-white/60 text-sm">Bagikan layar, diskusikan file, dan selesaikan tantangan teknis bersama.</p>
-                       </div>
-                    </div>
-                 </div>
-              </div>
-           </div>
         </section>
       </main>
 
       <Footer />
 
       <AnimatePresence>
-        {activeMentor && (
-          <BookingModal
-            mentor={activeMentor}
-            onClose={() => setActiveMentor(null)}
-          />
+        {selectedMentor && (
+          <MentorModal mentor={selectedMentor} onClose={() => setSelectedMentor(null)} />
         )}
       </AnimatePresence>
     </>

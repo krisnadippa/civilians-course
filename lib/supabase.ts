@@ -25,8 +25,8 @@ export async function uploadImage(file: File, folder: string = "general") {
   const fileExt = file.name.split('.').pop();
   const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
   
-  // Clean folder name to use as bucket name
-  const bucketName = folder.toLowerCase().replace(/[^a-z0-9]/g, '');
+  // Clean folder name to use as bucket name (allow underscores)
+  const bucketName = folder.toLowerCase().replace(/[^a-z0-9_]/g, '');
 
   const { error: uploadError } = await supabase.storage
     .from(bucketName)

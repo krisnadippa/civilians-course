@@ -5,21 +5,17 @@ import { Building2, Mail, Phone, MapPin, Instagram, Youtube, Linkedin } from "lu
 
 const footerLinks = {
   Platform: [
-    { label: "Jasa Perancangan", href: "/jasa" },
+    { label: "Kursus Teknik Sipil", href: "/kursus" },
     { label: "Booking Mentor", href: "/mentor" },
-    { label: "Toko Template", href: "/toko" },
   ],
   Layanan: [
-    { label: "Pembuatan RAB", href: "/jasa" },
-    { label: "Desain Struktur", href: "/jasa" },
-    { label: "Gambar CAD", href: "/jasa" },
-    { label: "Civil 3D Modeling", href: "/jasa" },
-    { label: "Manajemen Konstruksi", href: "/jasa" },
+    { label: "Civil 3D", href: "/kursus" },
+    { label: "SAP2000", href: "/kursus" },
+    { label: "Pelatihan BIM", href: "/kursus" },
   ],
   Dukungan: [
     { label: "Tentang Kami", href: "/" },
     { label: "FAQ", href: "/" },
-    { label: "Kebijakan Privasi", href: "/" },
     { label: "Admin Panel", href: "/admin" },
   ],
 };
@@ -58,8 +54,8 @@ export default function Footer() {
             <div className="flex flex-col gap-3.5 mb-8">
               {[
                 { icon: Mail, text: "hello@civilians.id" },
-                { icon: Phone, text: "+62 812-3456-7890" },
-                { icon: MapPin, text: "Bandung, Jawa Barat" },
+                { icon: Phone, text: "+62 877-6263-5300" },
+                { icon: MapPin, text: "Bali, Indonesia" },
               ].map(({ icon: Icon, text }) => (
                 <div key={text} className="flex items-center gap-3 text-sm">
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "white" }}>
