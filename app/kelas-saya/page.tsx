@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 import Navbar from "../_components/Navbar";
 import Footer from "../_components/Footer";
 import { motion } from "framer-motion";
-import { BookOpen, CheckCircle2, Clock, PlayCircle, Loader2, Building2, Cpu, Layers } from "lucide-react";
+import { BookOpen, CheckCircle2, Clock, PlayCircle, Loader2, Building2, Cpu, Layers, Award } from "lucide-react";
 import Link from "next/link";
 
 type Order = {
@@ -16,6 +16,7 @@ type Order = {
   meeting_link: string | null;
   meeting_schedule: string | null;
   created_at: string;
+  course_title_snap?: string | null;
   courses: {
     title: string;
     description: string;
@@ -56,14 +57,14 @@ export default function KelasSayaPage() {
       const { data: orderData, error: orderError } = await supabase
         .from("course_orders")
         .select(`
-          id, price_paid, status, meeting_link, meeting_schedule, created_at,
+          id, price_paid, status, meeting_link, meeting_schedule, created_at, course_title_snap,
           courses ( title, description, level, duration, instructor_names, category_id )
         `)
         .eq("user_id", session.user.id)
         .order("created_at", { ascending: false });
 
       if (orderData) {
-        setOrders(orderData as Order[]);
+        setOrders(orderData as unknown as Order[]);
       }
       
       setLoading(false);
@@ -205,7 +206,7 @@ export default function KelasSayaPage() {
                     ) : (
                        <div className="h-full flex flex-col justify-center">
                          <span className="px-2.5 py-1 bg-slate-100 border border-slate-200 text-slate-600 text-[10px] font-extrabold uppercase tracking-widest rounded-md self-start mb-3">
-                           Kursus Dihapus
+                           {o.course_title_snap || "Kursus Dihapus"}
                          </span>
                          <p className="font-bold text-slate-500 text-sm">Informasi kursus sudah tidak tersedia.</p>
                        </div>
