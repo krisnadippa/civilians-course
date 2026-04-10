@@ -2,8 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { ShoppingBag, Search, CheckCircle, XCircle, Eye, Loader2, PlayCircle, Clock, X } from "lucide-react";
+import { ShoppingBag, Search, CheckCircle, XCircle, Eye, Loader2, PlayCircle, Clock, X, Award, Circle, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+
+const PROGRESS_OPTIONS = [
+  { value: "Belum Mulai", label: "Belum Mulai", color: "bg-slate-100 text-slate-600 border-slate-300", dot: "bg-slate-400" },
+  { value: "Sedang Berjalan", label: "Sedang Berjalan", color: "bg-amber-50 text-amber-700 border-amber-300", dot: "bg-amber-500" },
+  { value: "Selesai", label: "Selesai", color: "bg-emerald-50 text-emerald-700 border-emerald-300", dot: "bg-emerald-500" },
+];
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
@@ -13,10 +19,10 @@ export default function AdminOrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   
-  // For updating status
   const [linkInput, setLinkInput] = useState("");
   const [scheduleInput, setScheduleInput] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [progressSaving, setProgressSaving] = useState(false);
 
   useEffect(() => {
     fetchOrders();
@@ -30,7 +36,7 @@ export default function AdminOrdersPage() {
         .select(`
           *,
           profiles ( name, email, phone, status_pekerjaan ),
-          courses ( title, category_id, instructor_names )
+          courses ( title, category_id, instructor_names, level, duration )
         `)
         .order("created_at", { ascending: false });
 
@@ -61,12 +67,39 @@ export default function AdminOrdersPage() {
       const { error } = await supabase.from("course_orders").update(payload).eq("id", selectedOrder.id);
       if (error) throw error;
       
-      setIsModalOpen(false);
+      setSelectedOrder({ ...selectedOrder, ...payload });
       fetchOrders();
     } catch (e: any) {
       alert("Gagal update status: " + e.message);
     }
     setIsSaving(false);
+  };
+
+  const updateProgress = async (progressStatus: string) => {
+    if (!selectedOrder) return;
+    setProgressSaving(true);
+    try {
+      const payload: any = { progress_status: progressStatus };
+      
+      // When marking as complete, set completed_at and update main status too
+      if (progressStatus === "Selesai") {
+        payload.completed_at = new Date().toISOString();
+        payload.status = "Selesai";
+      }
+      
+      const { error } = await supabase
+        .from("course_orders")
+        .update(payload)
+        .eq("id", selectedOrder.id);
+      
+      if (error) throw error;
+      
+      setSelectedOrder({ ...selectedOrder, ...payload });
+      fetchOrders();
+    } catch (e: any) {
+      alert("Gagal update progress: " + e.message);
+    }
+    setProgressSaving(false);
   };
 
   const filteredOrders = orders.filter(o => {
@@ -83,7 +116,13 @@ export default function AdminOrdersPage() {
     if (status === "Aktif") return "bg-emerald-50 text-emerald-700 border-emerald-200";
     if (status === "Menunggu Konfirmasi") return "bg-amber-50 text-amber-700 border-amber-200";
     if (status === "Dibatalkan") return "bg-red-50 text-red-700 border-red-200";
-    return "bg-blue-50 text-blue-700 border-blue-200"; // Selesai
+    if (status === "Selesai") return "bg-blue-50 text-blue-700 border-blue-200";
+    return "bg-slate-100 text-slate-600 border-slate-200";
+  };
+
+  const getProgressBadge = (progress: string | undefined) => {
+    const opt = PROGRESS_OPTIONS.find(p => p.value === progress) || PROGRESS_OPTIONS[0];
+    return opt;
   };
 
   return (
@@ -91,23 +130,38 @@ export default function AdminOrdersPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-slate-900" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Pesanan Kursus</h1>
-          <p className="text-sm font-bold text-slate-500 mt-1">Verifikasi pembayaran, atur jadwal sesi, dan link kelas.</p>
+          <p className="text-sm font-bold text-slate-500 mt-1">Verifikasi pembayaran, atur jadwal, dan kelola progress kursus siswa.</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
           <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600"><ShoppingBag size={24} /></div>
           <div>
-             <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Total Pesanan</p>
-             <p className="text-2xl font-black text-slate-900" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{orders.length}</p>
+            <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Total</p>
+            <p className="text-2xl font-black text-slate-900" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{orders.length}</p>
           </div>
         </div>
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
           <div className="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center text-amber-600"><Clock size={24} /></div>
           <div>
-             <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Menunggu</p>
-             <p className="text-2xl font-black text-slate-900" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{orders.filter(o => o.status === "Menunggu Konfirmasi").length}</p>
+            <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Menunggu</p>
+            <p className="text-2xl font-black text-slate-900" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{orders.filter(o => o.status === "Menunggu Konfirmasi").length}</p>
+          </div>
+        </div>
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+          <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center text-orange-600"><PlayCircle size={24} /></div>
+          <div>
+            <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Berjalan</p>
+            <p className="text-2xl font-black text-slate-900" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{orders.filter(o => o.progress_status === "Sedang Berjalan").length}</p>
+          </div>
+        </div>
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+          <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600"><Award size={24} /></div>
+          <div>
+            <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Selesai</p>
+            <p className="text-2xl font-black text-slate-900" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{orders.filter(o => o.progress_status === "Selesai").length}</p>
           </div>
         </div>
       </div>
@@ -137,44 +191,54 @@ export default function AdminOrdersPage() {
                   <th className="px-6 py-4 text-[10px] font-extrabold uppercase tracking-widest text-slate-500">Kustomer</th>
                   <th className="px-6 py-4 text-[10px] font-extrabold uppercase tracking-widest text-slate-500">Kursus</th>
                   <th className="px-6 py-4 text-[10px] font-extrabold uppercase tracking-widest text-slate-500">Status</th>
+                  <th className="px-6 py-4 text-[10px] font-extrabold uppercase tracking-widest text-slate-500">Progress</th>
                   <th className="px-6 py-4 text-[10px] font-extrabold uppercase tracking-widest text-slate-500 text-right">Aksi</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredOrders.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-8 text-center text-sm font-bold text-slate-500">Tidak ada pesanan.</td>
+                    <td colSpan={6} className="px-6 py-8 text-center text-sm font-bold text-slate-500">Tidak ada pesanan.</td>
                   </tr>
                 ) : (
-                  filteredOrders.map((item) => (
-                    <tr key={item.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
-                      <td className="px-6 py-4 text-xs font-bold text-slate-600 whitespace-nowrap">
-                        {new Date(item.created_at).toLocaleDateString("id-ID", { day: 'numeric', month: 'short', year: 'numeric' })}
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className="font-bold text-slate-900 text-sm mb-1">{item.profiles?.name || "Member"}</p>
-                        <p className="text-[10px] font-extrabold text-slate-400">{item.profiles?.email}</p>
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className="font-bold text-slate-900 text-sm mb-1">
-                          {item.courses?.title || item.course_title_snap || "Kursus Dihapus"}
-                        </p>
-                        <p className="text-[10px] font-extrabold text-blue-500 uppercase tracking-widest">Rp {item.price_paid.toLocaleString()}</p>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-widest border ${getStatusColor(item.status)}`}>
-                          {item.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex justify-end">
-                          <button onClick={() => openModal(item)} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg text-xs font-bold transition-colors">
-                            <Eye size={14} /> Kelola
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                  filteredOrders.map((item) => {
+                    const prog = getProgressBadge(item.progress_status);
+                    return (
+                      <tr key={item.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
+                        <td className="px-6 py-4 text-xs font-bold text-slate-600 whitespace-nowrap">
+                          {new Date(item.created_at).toLocaleDateString("id-ID", { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </td>
+                        <td className="px-6 py-4">
+                          <p className="font-bold text-slate-900 text-sm mb-1">{item.profiles?.name || "Member"}</p>
+                          <p className="text-[10px] font-extrabold text-slate-400">{item.profiles?.email}</p>
+                        </td>
+                        <td className="px-6 py-4">
+                          <p className="font-bold text-slate-900 text-sm mb-1">
+                            {item.courses?.title || item.course_title_snap || "Kursus Dihapus"}
+                          </p>
+                          <p className="text-[10px] font-extrabold text-blue-500 uppercase tracking-widest">Rp {item.price_paid.toLocaleString()}</p>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-widest border ${getStatusColor(item.status)}`}>
+                            {item.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-widest border flex items-center gap-1.5 w-fit ${prog.color}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${prog.dot}`}></span>
+                            {prog.value}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex justify-end">
+                            <button onClick={() => openModal(item)} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg text-xs font-bold transition-colors">
+                              <Eye size={14} /> Kelola
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -190,14 +254,14 @@ export default function AdminOrdersPage() {
               className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh]">
               
               <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50 text-slate-900">
-                <h2 className="font-black text-lg" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Detail Pesanan</h2>
+                <h2 className="font-black text-lg" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Detail & Kelola Pesanan</h2>
                 <button onClick={() => setIsModalOpen(false)} className="p-2 rounded-xl text-slate-400 hover:bg-slate-200">
                   <X size={20} />
                 </button>
               </div>
 
-              <div className="p-6 overflow-y-auto hidden-scrollbar flex-1 space-y-6">
-                {/* Info Utama */}
+              <div className="p-6 overflow-y-auto hidden-scrollbar flex-1 space-y-5">
+                {/* Info Grid */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
                     <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1.5">Kustomer</p>
@@ -212,12 +276,63 @@ export default function AdminOrdersPage() {
                     <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1.5">Pesanan</p>
                     <p className="text-sm font-bold text-slate-900">{selectedOrder.courses?.title || selectedOrder.course_title_snap || "Kursus Dihapus"}</p>
                     <p className="text-lg font-black text-slate-900 mt-2" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-                       Rp {selectedOrder.price_paid.toLocaleString()}
+                      Rp {selectedOrder.price_paid.toLocaleString()}
                     </p>
-                    <span className={`inline-block px-2.5 py-1 mt-2 rounded-lg text-[10px] font-extrabold uppercase tracking-widest border ${getStatusColor(selectedOrder.status)}`}>
-                      {selectedOrder.status}
-                    </span>
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className={`inline-block px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-widest border ${getStatusColor(selectedOrder.status)}`}>
+                        {selectedOrder.status}
+                      </span>
+                    </div>
                   </div>
+                </div>
+
+                {/* ── PROGRESS STATUS CONTROL ── */}
+                <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-5 border border-slate-700">
+                  <p className="text-[10px] font-extrabold text-blue-400 uppercase tracking-widest mb-3">🎓 Progress Kursus Siswa</p>
+                  <p className="text-xs text-slate-400 font-bold mb-4">
+                    Set progress siswa untuk kursus ini. Saat status <span className="text-emerald-400">"Selesai"</span> dipilih, 
+                    sertifikat elektronik akan otomatis tersedia untuk diunduh oleh siswa.
+                  </p>
+                  <div className="grid grid-cols-3 gap-3">
+                    {PROGRESS_OPTIONS.map((opt) => {
+                      const isActive = (selectedOrder.progress_status || "Belum Mulai") === opt.value;
+                      return (
+                        <button
+                          key={opt.value}
+                          onClick={() => updateProgress(opt.value)}
+                          disabled={progressSaving}
+                          className={`py-3 px-3 rounded-xl font-bold text-xs transition-all border-2 flex flex-col items-center gap-1.5 ${
+                            isActive
+                              ? opt.value === "Selesai"
+                                ? "bg-emerald-500 border-emerald-400 text-white shadow-lg shadow-emerald-500/25"
+                                : opt.value === "Sedang Berjalan"
+                                  ? "bg-amber-500 border-amber-400 text-white shadow-lg shadow-amber-500/25"
+                                  : "bg-slate-600 border-slate-500 text-white"
+                              : "bg-slate-800 border-slate-600 text-slate-400 hover:border-slate-500 hover:text-slate-200"
+                          }`}
+                        >
+                          {progressSaving && isActive ? (
+                            <Loader2 size={14} className="animate-spin" />
+                          ) : opt.value === "Selesai" ? (
+                            <Award size={16} />
+                          ) : opt.value === "Sedang Berjalan" ? (
+                            <PlayCircle size={16} />
+                          ) : (
+                            <Circle size={16} />
+                          )}
+                          {opt.label}
+                          {isActive && <span className="text-[8px] opacity-70">● Aktif</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {selectedOrder.completed_at && (
+                    <p className="text-[10px] text-emerald-400 font-bold mt-3">
+                      ✓ Selesai pada: {new Date(selectedOrder.completed_at).toLocaleDateString("id-ID", { 
+                        day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit"
+                      })} WIB
+                    </p>
+                  )}
                 </div>
 
                 {/* Bukti Bayar */}

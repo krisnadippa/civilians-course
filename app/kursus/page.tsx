@@ -249,7 +249,7 @@ function CheckoutModal({ subCourse, category, onClose }: { subCourse: SubCourse;
   
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const BANK = { number: "1452492148", name: "Sang Ayu Putu Ratna Essya Pitaloka", bank: "BNI" };
+  const BANK = { number: "1786875302", name: "Sang Ayu Putu Ratna Essya Pitaloka", bank: "BNI" };
   const WA_NUMBER = "6287762635300";
 
   useEffect(() => {
