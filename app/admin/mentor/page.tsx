@@ -26,8 +26,11 @@ export default function AdminMentorPage() {
     expertise_tags: "",
     courses_handled: "",
     specializations: "",
-    achievements: ""
+    achievements: "",
+    signature_url: ""
   });
+  const [signatureFile, setSignatureFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -62,8 +65,10 @@ export default function AdminMentorPage() {
         expertise_tags: mentor.expertise_tags || "",
         courses_handled: mentor.courses_handled || "",
         specializations: mentor.specializations || "",
-        achievements: mentor.achievements || ""
+        achievements: mentor.achievements || "",
+        signature_url: mentor.signature_url || ""
       });
+      setSignatureFile(null);
     } else {
       setSelectedMentor(null);
       setFormData({
@@ -79,38 +84,58 @@ export default function AdminMentorPage() {
         expertise_tags: "",
         courses_handled: "",
         specializations: "",
-        achievements: ""
+        achievements: "",
+        signature_url: ""
       });
+      setSignatureFile(null);
     }
     setIsModalOpen(true);
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    const payload = {
-      name: formData.name,
-      initials: formData.initials || formData.name.substring(0, 2).toUpperCase(),
-      title: formData.title,
-      role: formData.role,
-      bio: formData.bio,
-      experience: formData.experience,
-      rating: parseFloat(formData.rating) || 0,
-      sessions_count: parseInt(formData.sessions_count) || 0,
-      color_theme: formData.color_theme,
-      expertise_tags: formData.expertise_tags,
-      courses_handled: formData.courses_handled,
-      specializations: formData.specializations,
-      achievements: formData.achievements
-    };
+    setIsUploading(true);
+    
+    let uploadedUrl = formData.signature_url;
+    
+    try {
+      if (signatureFile) {
+        const { uploadImage } = await import("@/lib/supabase");
+        uploadedUrl = await uploadImage(signatureFile, "mentors");
+      }
 
-    if (modalMode === "add") {
-      const { error } = await supabase.from("mentors").insert([payload]);
-      if (error) alert("Error: " + error.message);
-      else { setIsModalOpen(false); fetchData(); }
-    } else {
-      const { error } = await supabase.from("mentors").update(payload).eq("id", selectedMentor.id);
-      if (error) alert("Error: " + error.message);
-      else { setIsModalOpen(false); fetchData(); }
+      const payload = {
+        name: formData.name,
+        initials: formData.initials || formData.name.substring(0, 2).toUpperCase(),
+        title: formData.title,
+        role: formData.role,
+        bio: formData.bio,
+        experience: formData.experience,
+        rating: parseFloat(formData.rating) || 0,
+        sessions_count: parseInt(formData.sessions_count) || 0,
+        color_theme: formData.color_theme,
+        expertise_tags: formData.expertise_tags,
+        expertise: formData.expertise_tags, // Use same value as expertise_tags to satisfy constraint
+        courses_handled: formData.courses_handled,
+        specializations: formData.specializations,
+        achievements: formData.achievements,
+        signature_url: uploadedUrl
+      };
+
+      if (modalMode === "add") {
+        const { error } = await supabase.from("mentors").insert([payload]);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("mentors").update(payload).eq("id", selectedMentor.id);
+        if (error) throw error;
+      }
+
+      setIsModalOpen(false);
+      fetchData();
+    } catch (error: any) {
+      alert("Gagal menyimpan: " + error.message);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -133,6 +158,7 @@ export default function AdminMentorPage() {
           name: "Ratna Essya", initials: "RE", title: "Ahli Desain Jalan & Infrastruktur", role: "Civil 3D Specialist", 
           bio: "Praktisi aktif di bidang desain infrastruktur dan perencanaan jalan.", experience: "7+ Tahun", rating: 4.9, sessions_count: 87, color_theme: "emerald",
           expertise_tags: "Autodesk Civil 3D, Corridor Design, Volume Earthwork, Drainase, Road Alignment",
+          expertise: "Autodesk Civil 3D, Corridor Design, Volume Earthwork, Drainase, Road Alignment",
           courses_handled: "Civil 3D",
           specializations: "Perencanaan Geometric Jalan, Perhitungan Galian & Timbunan, Desain Koridor Civil 3D",
           achievements: "Proyek Jalan Nasional Bali–Lombok, Konsultan 20+ Proyek Civil 3D, Certified Autodesk Professional"
@@ -141,6 +167,7 @@ export default function AdminMentorPage() {
           name: "Arimantara", initials: "AR", title: "Spesialis Infrastruktur & Struktur", role: "Civil 3D & Structural Analyst", 
           bio: "Konsultan senior dengan keahlian ganda di bidang infrastruktur sipil dan analisis struktur.", experience: "9+ Tahun", rating: 5.0, sessions_count: 92, color_theme: "blue",
           expertise_tags: "Civil 3D, SAP2000, Structural Analysis, Beban Gempa, SNI 2847",
+          expertise: "Civil 3D, SAP2000, Structural Analysis, Beban Gempa, SNI 2847",
           courses_handled: "Civil 3D, SAP2000",
           specializations: "Desain Infrastruktur Civil 3D, Analisis Struktur Beton & Baja, Pelatihan SAP Dasar (ASSTT)",
           achievements: "200+ Peserta Dibimbing, Proyek Tol Trans-Jawa, M.T. Teknik Sipil UI"
@@ -149,6 +176,7 @@ export default function AdminMentorPage() {
           name: "Eka Juniarta", initials: "EJ", title: "Pakar Analisis Struktur & BIM", role: "SAP2000 & BIM Expert", 
           bio: "Expert di analisis struktur tingkat lanjut dan Building Information Modeling.", experience: "8+ Tahun", rating: 4.9, sessions_count: 78, color_theme: "indigo",
           expertise_tags: "SAP2000, Revit, Tekla, SRPMK, SNI 1729",
+          expertise: "SAP2000, Revit, Tekla, SRPMK, SNI 1729",
           courses_handled: "SAP2000, BIM",
           specializations: "SNI 2847 Beton Bertulang, SNI 1729 Konstruksi Baja, Analisis SRPMK & Respons Spektrum, Revit & BIM Workflow",
           achievements: "Certified BIM Manager, Proyek Gedung 25 Lantai, Pembicara Seminar Nasional BIM"
@@ -157,6 +185,7 @@ export default function AdminMentorPage() {
           name: "Bagaskara", initials: "BG", title: "Spesialis BIM & Manajemen Proyek", role: "BIM & Project Management", 
           bio: "Praktisi BIM dengan fokus pada integrasi workflow 3D dan penjadwalan.", experience: "6+ Tahun", rating: 5.0, sessions_count: 65, color_theme: "violet",
           expertise_tags: "Tekla Structures, Ms. Project, Revit MEP, RAB Otomatis, 4D BIM",
+          expertise: "Tekla Structures, Ms. Project, Revit MEP, RAB Otomatis, 4D BIM",
           courses_handled: "BIM",
           specializations: "Tekla Structural Designer, Ms. Project Scheduling, Perhitungan RAB dari Model BIM",
           achievements: "BIM Implementation Lead, Proyek BIM Award 2023, S2 Manajemen Konstruksi"
@@ -362,14 +391,39 @@ export default function AdminMentorPage() {
                      <input type="number" value={formData.sessions_count} onChange={e => setFormData({ ...formData, sessions_count: e.target.value })}
                        className="w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold outline-none focus:border-blue-500 text-slate-900" />
                   </div>
+
+                  <div className="space-y-1.5 col-span-2 border-t border-slate-100 pt-4">
+                    <label className="text-[10px] font-extrabold uppercase tracking-widest text-slate-500">Tanda Tangan Asli (Foto/Scan PNG)</label>
+                    <div className="flex flex-col sm:flex-row items-center gap-4 mt-2 p-4 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+                      {formData.signature_url ? (
+                        <div className="w-32 h-20 bg-white border rounded-lg flex items-center justify-center overflow-hidden">
+                          <img src={formData.signature_url} alt="Signature" className="max-w-full max-h-full object-contain" />
+                        </div>
+                      ) : (
+                        <div className="w-32 h-20 bg-slate-100 border rounded-lg flex items-center justify-center text-[10px] font-bold text-slate-400 italic">
+                          Belum ada ttd
+                        </div>
+                      )}
+                      <div className="flex-1 space-y-2">
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          onChange={(e) => setSignatureFile(e.target.files?.[0] || null)}
+                          className="text-xs font-bold text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-black file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all cursor-pointer w-full" 
+                        />
+                        <p className="text-[9px] font-bold text-slate-400">Gunakan format PNG transparan untuk hasil terbaik di sertifikat.</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </form>
             </div>
 
             <div className="p-5 border-t border-slate-100 flex items-center justify-end gap-3 bg-slate-50">
               <button onClick={() => setIsModalOpen(false)} className="px-5 py-2.5 rounded-xl font-bold text-sm text-slate-600 bg-white border border-slate-300 hover:bg-slate-100 transition-colors">Batal</button>
-              <button type="submit" form="mentorForm" className="px-5 py-2.5 rounded-xl font-bold text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-md transition-colors flex items-center gap-2">
-                <Save size={16} /> Simpan Profil
+              <button type="submit" form="mentorForm" disabled={isUploading} className="px-5 py-2.5 rounded-xl font-bold text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-md transition-colors flex items-center gap-2 disabled:opacity-50">
+                {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} 
+                {isUploading ? "Mengunggah..." : "Simpan Profil"}
               </button>
             </div>
           </div>

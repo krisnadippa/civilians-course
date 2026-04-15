@@ -35,7 +35,7 @@ export default function KelasSayaPage() {
   const [profile, setProfile] = useState<any>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
-
+  
   useEffect(() => {
     const fetchUserAndOrders = async () => {
       setLoading(true);
@@ -103,7 +103,21 @@ export default function KelasSayaPage() {
     if (!order.courses || !profile) return;
     setDownloadingId(order.id);
     try {
-      // Dynamic import so it only loads in browser when needed
+      // 1. Fetch mentor signatures dynamically
+      const mentorNames = order.courses.instructor_names.split(/[&,]/).map(m => m.trim()).filter(m => m !== "");
+      const { data: mentorsData } = await supabase
+        .from("mentors")
+        .select("name, signature_url")
+        .in("name", mentorNames);
+
+      const signatureMap: Record<string, string> = {};
+      mentorsData?.forEach(m => {
+        if (m.signature_url) signatureMap[m.name] = m.signature_url;
+      });
+
+      const instructorSignatures = mentorNames.map(name => signatureMap[name]);
+
+      // 2. Dynamic import so it only loads in browser when needed
       const { generateCertificate } = await import("@/lib/generateCertificate");
       await generateCertificate({
         studentName: profile.name,
@@ -112,6 +126,7 @@ export default function KelasSayaPage() {
         instructorNames: order.courses.instructor_names,
         completedAt: order.completed_at || new Date().toISOString(),
         certId: generateCertId(order.id),
+        instructorSignatures: instructorSignatures
       });
     } catch (e) {
       console.error("Certificate generation error:", e);
